@@ -22,13 +22,13 @@ const Reports = (() => {
           </div>
         `)}
 
-        ${UI.panel('CASH VS EFT — BY MONTH', `
+        ${UI.panel('CASH VS EFT BY MONTH', `
           <div class="chart-area">
             <pre class="ascii-chart">${renderCashEFTChart(monthly)}</pre>
           </div>
         `)}
 
-        ${UI.panel('BEST SELLING PRODUCTS — BY UNITS', `
+        ${UI.panel('TOP PRODUCTS BY UNITS SOLD', `
           ${UI.table(
             ['PRODUCT','CATEGORY','UNITS SOLD','REVENUE'],
             products.slice(0,10).map(p => [UI.esc(p.name), p.category, p.unitsSold, UI.fmtCurrency(p.revenue)])
@@ -44,7 +44,7 @@ const Reports = (() => {
           )}
         `)}
 
-        ${UI.panel('NEW VS RETURNING CUSTOMERS — BY MONTH', `
+        ${UI.panel('NEW VS RETURNING CUSTOMERS BY MONTH', `
           ${UI.table(
             ['MONTH','NEW','RETURNING','TOTAL SALES'],
             Object.entries(custStats).sort((a,b) => b[0].localeCompare(a[0])).map(([month, d]) =>
@@ -110,7 +110,7 @@ const Reports = (() => {
     sales.forEach(s => {
       if (!s.product) return;
       const k = s.product;
-      if (!stats[k]) stats[k] = { name: s.product, category: s.category||'—', unitsSold: 0, revenue: 0 };
+      if (!stats[k]) stats[k] = { name: s.product, category: s.category||'Uncategorised', unitsSold: 0, revenue: 0 };
       stats[k].unitsSold += s.qty || 0;
       stats[k].revenue  += s.amount || 0;
     });

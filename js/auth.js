@@ -154,7 +154,7 @@ const Auth = (() => {
       setMsg('PIN not set. Contact admin.', 'warn');
     } else if (_selectedStaff && _selectedStaff.lockedUntil && Date.now() < _selectedStaff.lockedUntil) {
       const mins = Math.ceil((_selectedStaff.lockedUntil - Date.now()) / 60000);
-      setMsg(`LOCKED — try again in ${mins} min`, 'error');
+      setMsg(`LOCKED. Try again in ${mins} min.`, 'error');
     }
   }
 
@@ -162,7 +162,7 @@ const Auth = (() => {
     if (!_selectedStaff) { setMsg('Select a staff member first', 'warn'); return; }
     if (_selectedStaff.lockedUntil && Date.now() < _selectedStaff.lockedUntil) {
       const mins = Math.ceil((_selectedStaff.lockedUntil - Date.now()) / 60000);
-      setMsg(`LOCKED — try again in ${mins} min`, 'error');
+      setMsg(`LOCKED. Try again in ${mins} min.`, 'error');
       return;
     }
     if (k === 'CLR') { _pinBuffer = ''; updateDots(); return; }
@@ -198,9 +198,9 @@ const Auth = (() => {
       shakeDots();
 
       if (lockUntil) {
-        setMsg(`${CONFIG.MAX_FAILED_ATTEMPTS} failed attempts — locked ${CONFIG.LOCKOUT_MINUTES} min`, 'error');
+        setMsg(`${CONFIG.MAX_FAILED_ATTEMPTS} failed attempts. Account locked for ${CONFIG.LOCKOUT_MINUTES} minutes.`, 'error');
       } else {
-        setMsg(`Wrong PIN — ${CONFIG.MAX_FAILED_ATTEMPTS - fails} attempt(s) remaining`, 'error');
+        setMsg(`Wrong PIN. ${CONFIG.MAX_FAILED_ATTEMPTS - fails} attempt(s) remaining.`, 'error');
       }
     }
   }
@@ -269,7 +269,7 @@ const Auth = (() => {
             <button class="btn btn-secondary btn-block" onclick="Auth.cancelSetupPIN()">CANCEL</button>
           </div>
           <button class="btn btn-primary btn-block" id="setup-complete-btn" onclick="Auth.completeSetup()" style="display:none;margin-top:16px">
-            SETUP COMPLETE — LOG IN
+            SETUP COMPLETE. LOG IN
           </button>
         </div>
       </div>
@@ -314,7 +314,7 @@ const Auth = (() => {
       updateSetupDots();
     } else if (_setupStep === 2) {
       if (_pinBuffer !== _setupNewPin) {
-        document.getElementById('setup-msg').textContent = 'PINs do not match — try again';
+        document.getElementById('setup-msg').textContent = 'PINs do not match. Try again.';
         document.getElementById('setup-msg').className = 'login-msg error';
         _pinBuffer = '';
         _setupNewPin = '';

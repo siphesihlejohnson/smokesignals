@@ -18,7 +18,7 @@ const Sales = (() => {
           <div class="sale-form">
             <div class="form-row">
               <div class="form-group flex-2">
-                <label>CUSTOMER — select existing or type phone to add new</label>
+                <label>CUSTOMER</label>
                 <div class="cust-select-row">
                   <select id="s-cust-select">
                     <option value="">-- SELECT EXISTING CUSTOMER --</option>
@@ -46,12 +46,12 @@ const Sales = (() => {
                 <label>PRODUCT</label>
                 <select id="s-product">
                   <option value="">-- SELECT PRODUCT --</option>
-                  ${products.map(p => `<option value="${p.id}">${UI.esc(p.name)} — ${Data.getSettings().currency||'R'}${p.price}/${p.unit} (${p.stock} in stock)</option>`).join('')}
+                  ${products.map(p => `<option value="${p.id}">${UI.esc(p.name)} (${Data.getSettings().currency||'R'}${p.price} per ${p.unit}, ${p.stock} in stock)</option>`).join('')}
                 </select>
               </div>
               <div class="form-group">
                 <label>UNIT</label>
-                <input type="text" id="s-unit" readonly placeholder="—">
+                <input type="text" id="s-unit" readonly placeholder="">
               </div>
             </div>
             <div class="form-row">
@@ -239,10 +239,10 @@ const Sales = (() => {
     }
 
     Data.addAudit('SALE_CAPTURED',
-      `${product.name} x${qty} — ${UI.fmtCurrency(amount)} (${_payMethod}) — ${name} (${phone})`,
+      `${product.name} x${qty} for ${UI.fmtCurrency(amount)} via ${_payMethod} to ${name} (${phone})`,
       s.staffId);
 
-    UI.toast(`Sale saved: ${product.name} x${qty} — ${UI.fmtCurrency(amount)}`, 'success');
+    UI.toast(`Sale saved: ${product.name} x${qty} for ${UI.fmtCurrency(amount)}`, 'success');
     clearForm();
     renderOwnSales();
     Data.processQueue();

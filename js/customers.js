@@ -51,9 +51,9 @@ const Customers = (() => {
         c.phone,
         UI.fmtCurrency(c.totalSpent||0),
         c.visits||0,
-        UI.esc(c.favProduct||'—'),
-        c.lastPurchase ? Data.fmtDate(c.lastPurchase) : '—',
-        UI.esc(c.notes||'—'),
+        UI.esc(c.favProduct||'N/A'),
+        c.lastPurchase ? Data.fmtDate(c.lastPurchase) : 'Never',
+        UI.esc(c.notes||''),
         `<button class="btn btn-xs" onclick="Customers.showEditForm('${c.phone.replace(/'/g,"\\'")}')">EDIT</button>
          <button class="btn btn-xs btn-danger" onclick="Customers.deleteCustomer('${c.phone.replace(/'/g,"\\'")}')">DEL</button>`,
       ]),
@@ -115,9 +115,9 @@ const Customers = (() => {
         <div class="cust-stats">
           <span>TOTAL SPENT: ${UI.fmtCurrency(customer.totalSpent||0)}</span>
           <span>VISITS: ${customer.visits||0}</span>
-          <span>FIRST PURCHASE: ${customer.firstPurchase ? Data.fmtDate(customer.firstPurchase) : '—'}</span>
-          <span>FAV PRODUCT: ${UI.esc(customer.favProduct||'—')}</span>
-          <span>ADDED BY: ${customer.addedBy||'—'}</span>
+          <span>FIRST PURCHASE: ${customer.firstPurchase ? Data.fmtDate(customer.firstPurchase) : 'Unknown'}</span>
+          <span>FAV PRODUCT: ${UI.esc(customer.favProduct||'N/A')}</span>
+          <span>ADDED BY: ${customer.addedBy||'Unknown'}</span>
         </div>
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">SAVE CHANGES</button>

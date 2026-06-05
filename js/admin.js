@@ -61,7 +61,7 @@ const Admin = (() => {
             s.active
               ? `<span class="badge badge-ok">ACTIVE</span>`
               : `<span class="badge badge-out">INACTIVE</span>`,
-            s.lastLogin ? Data.fmtDate(s.lastLogin) : '—',
+            s.lastLogin ? Data.fmtDate(s.lastLogin) : 'Never',
             `<button class="btn btn-xs" onclick="Admin.editStaff('${s.id}')">EDIT</button>
              <button class="btn btn-xs" onclick="Admin.doResetPIN('${s.id}')">RESET PIN</button>
              <button class="btn btn-xs ${s.active?'btn-warn':'btn-ok'}" onclick="Admin.toggleStaff('${s.id}')">
@@ -98,7 +98,7 @@ const Admin = (() => {
         ${!isEdit ? `
         <div class="form-group">
           <label>PIN will be set by the staff member on first login</label>
-          <div class="form-note">Leave PIN as "not set" — staff member will be prompted to set it</div>
+          <div class="form-note">Leave PIN as "not set". The staff member will be prompted to set their own PIN on first login.</div>
         </div>` : ''}
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">${isEdit ? 'SAVE' : 'ADD STAFF'}</button>
@@ -564,7 +564,7 @@ const Setup = (() => {
       })
       .catch(() => {
         const area = document.getElementById('appsscript-code-area');
-        if (area) area.textContent = 'Could not load APPSSCRIPT.js — view the file directly.';
+        if (area) area.textContent = 'Could not load APPSSCRIPT.js. View the file directly in the project folder.';
       });
   }
 
