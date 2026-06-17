@@ -291,6 +291,17 @@
       margin-top: 10px; line-height: 1.55;
     }
 
+    /* ── Validation ─────────────────────────────────────── */
+    .field-error {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.68rem;
+      color: #ff4455;
+      margin-top: 3px;
+    }
+    input.invalid, select.invalid, textarea.invalid {
+      border-color: #ff4455;
+    }
+
     /* ── Success ─────────────────────────────────────────── */
     #success { display: none; padding: 32px 0; }
     .success-mark {
@@ -536,6 +547,10 @@
                 <textarea id="f-notes" placeholder="Current setup, questions, whatever is relevant."></textarea>
               </div>
             </div>
+            <!-- Honeypot: hidden from real users, bots will fill it -->
+            <div style="position:absolute;left:-9999px;top:-9999px" aria-hidden="true">
+              <input type="text" id="f-pot" tabindex="-1" autocomplete="off">
+            </div>
             <button type="submit" class="submit-btn" id="submit-btn">Submit application</button>
             <p class="form-note">
               Your details stay between you and us. We do not share anything.
@@ -559,55 +574,99 @@
 
   <script>
     const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzYd-vLgKl1ib9po9G36c2e96r23I1kDN7Qg9Yu3yZcUuWSDAUJXocZKohyzeKTkr5s/exec';
+    const RATE_LIMIT_KEY = 'nw_last_submit';
+    const RATE_LIMIT_MS  = 120000;
+
+    function sanitize(str, maxLen) {
+      if (!str) return '';
+      return str
+        .replace(/<[^>]*>/g, '')
+        .replace(/[<>"'`\\]/g, '')
+        .replace(/javascript:/gi, '')
+        .replace(/on\w+\s*=/gi, '')
+        .trim()
+        .substring(0, maxLen || 200);
+    }
+
+    function validateWhatsApp(num) {
+      const c = num.replace(/[\s\-\(\)\+]/g, '');
+      return /^(0[6-8][0-9]{8}|27[6-8][0-9]{8})$/.test(c);
+    }
+
+    function normalizeWhatsApp(num) {
+      const c = num.replace(/[\s\-\(\)]/g, '');
+      if (c.startsWith('+27') && c.length === 12) return c;
+      if (c.startsWith('27')  && c.length === 11) return '+27' + c.substring(2);
+      if (c.startsWith('0')   && c.length === 10) return '+27' + c.substring(1);
+      return c;
+    }
+
+    function showError(id, msg) {
+      const el = document.getElementById(id);
+      el.classList.add('invalid');
+      if (!el.parentElement.querySelector('.field-error')) {
+        const err = document.createElement('span');
+        err.className = 'field-error';
+        err.textContent = msg;
+        el.parentElement.appendChild(err);
+      }
+    }
+
+    function clearErrors() {
+      document.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid'));
+      document.querySelectorAll('.field-error').forEach(el => el.remove());
+    }
 
     document.getElementById('waitlist-form').addEventListener('submit', async (e) => {
       e.preventDefault();
+      clearErrors();
+
+      // Honeypot check
+      if (document.getElementById('f-pot').value !== '') return;
+
+      // Rate limit
+      const last = localStorage.getItem(RATE_LIMIT_KEY);
+      if (last && Date.now() - parseInt(last) < RATE_LIMIT_MS) {
+        showError('f-fname', 'Please wait before submitting again.');
+        return;
+      }
+
+      // Sanitize
+      const fname    = sanitize(document.getElementById('f-fname').value, 60);
+      const lname    = sanitize(document.getElementById('f-lname').value, 60);
+      const whatsapp = document.getElementById('f-whatsapp').value.trim();
+      const area     = sanitize(document.getElementById('f-area').value, 100);
+      const volume   = document.getElementById('f-volume').value;
+      const source   = sanitize(document.getElementById('f-source').value, 100);
+      const notes    = sanitize(document.getElementById('f-notes').value, 500);
+
+      // Validate
+      let valid = true;
+      if (!fname) { showError('f-fname', 'First name is required.'); valid = false; }
+      if (!whatsapp || !validateWhatsApp(whatsapp)) { showError('f-whatsapp', 'Enter a valid SA number, e.g. 0821234567.'); valid = false; }
+      if (!area) { showError('f-area', 'Area is required.'); valid = false; }
+      if (!volume) { showError('f-volume', 'Select a volume range.'); valid = false; }
+      if (!valid) return;
+
       const btn = document.getElementById('submit-btn');
       btn.disabled = true;
       btn.textContent = 'Submitting...';
 
-      const payload = {
-        action: 'WAITLIST',
-        data: {
-          fname:      document.getElementById('f-fname').value.trim(),
-          lname:      document.getElementById('f-lname').value.trim(),
-          whatsapp:   document.getElementById('f-whatsapp').value.trim(),
-          area:       document.getElementById('f-area').value.trim(),
-          volume:     document.getElementById('f-volume').value,
-          source:     document.getElementById('f-source').value.trim(),
-          notes:      document.getElementById('f-notes').value.trim(),
-          submittedAt: new Date().toISOString(),
-        }
-      };
+      const params = new URLSearchParams({
+        submittedAt: new Date().toISOString(),
+        fname, lname,
+        whatsapp: normalizeWhatsApp(whatsapp),
+        area, volume, source, notes,
+        pot: '',
+      });
 
-      let ok = false;
-      if (APPS_SCRIPT_URL) {
-        try {
-          const params = new URLSearchParams({
-            submittedAt: payload.data.submittedAt,
-            fname:       payload.data.fname,
-            lname:       payload.data.lname,
-            whatsapp:    payload.data.whatsapp,
-            area:        payload.data.area,
-            volume:      payload.data.volume,
-            source:      payload.data.source,
-            notes:       payload.data.notes,
-          });
-          await fetch(APPS_SCRIPT_URL + '?' + params.toString(), {
-            method: 'GET',
-            mode: 'no-cors',
-          });
-          ok = true;
-        } catch (err) { console.warn(err); }
-      } else {
-        console.log('Submission:', payload.data);
-        ok = true;
-      }
-
-      if (ok) {
+      try {
+        await fetch(APPS_SCRIPT_URL + '?' + params.toString(), { method: 'GET', mode: 'no-cors' });
+        localStorage.setItem(RATE_LIMIT_KEY, Date.now().toString());
         document.getElementById('form-area').style.display = 'none';
         document.getElementById('success').style.display = 'block';
-      } else {
+      } catch (err) {
+        console.warn(err);
         btn.textContent = 'Failed. Try again.';
         btn.disabled = false;
       }
