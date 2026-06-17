@@ -118,12 +118,6 @@
     .cta-btn:hover { background: var(--green-hi); }
     .cta-arrow { font-size: 0.9rem; }
 
-    /* ── Divider ─────────────────────────────────────────── */
-    .divider {
-      border: none;
-      border-top: 1px solid var(--border);
-    }
-
     /* ── Stats ───────────────────────────────────────────── */
     .stats {
       background: var(--surface);
@@ -133,28 +127,28 @@
     .stats-inner {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      max-width: 900px; margin: 0 auto;
     }
     .stat {
-      padding: 30px 32px;
+      padding: 40px 48px;
       border-right: 1px solid var(--border);
       text-align: center;
     }
     .stat:last-child { border-right: none; }
     .stat-val {
       font-family: 'Syne', sans-serif;
-      font-size: 2.2rem; font-weight: 700;
+      font-size: 2.4rem; font-weight: 800;
       color: var(--green); line-height: 1;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
     .stat-desc {
       font-size: 0.72rem; color: var(--dim);
-      letter-spacing: 0.08em; text-transform: uppercase;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      white-space: nowrap;
     }
 
     /* ── Sections ────────────────────────────────────────── */
-    section { padding: 84px 32px; max-width: 900px; margin: 0 auto; }
-    section.full { max-width: 100%; padding: 84px 0; }
+    section { padding: 96px 48px; max-width: 1100px; margin: 0 auto; }
+    section.full { max-width: 100%; padding: 96px 0; }
     .section-label {
       font-family: 'Syne', sans-serif;
       font-size: 0.68rem; font-weight: 600;
@@ -176,11 +170,11 @@
     /* ── How it works ────────────────────────────────────── */
     .steps {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      grid-template-columns: repeat(5, 1fr);
       border: 1px solid var(--border-mid);
     }
     .step {
-      padding: 26px 22px;
+      padding: 32px 28px;
       border-right: 1px solid var(--border);
     }
     .step:last-child { border-right: none; }
@@ -200,14 +194,14 @@
     /* ── What you get ────────────────────────────────────── */
     .perks {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(4, 1fr);
       gap: 1px;
       background: var(--border);
       border: 1px solid var(--border-mid);
     }
     .perk {
       background: var(--bg);
-      padding: 26px 22px;
+      padding: 36px 30px;
     }
     .perk-title {
       font-family: 'Syne', sans-serif;
@@ -250,7 +244,7 @@
       border-bottom: 1px solid var(--border-mid);
       padding: 84px 32px;
     }
-    #apply .inner { max-width: 900px; margin: 0 auto; }
+    #apply .inner { max-width: 1100px; margin: 0 auto; }
     .form-wrap { max-width: 580px; margin-top: 0; }
     .form-grid {
       display: grid;
@@ -324,6 +318,13 @@
     .foot-note { font-size: 0.72rem; color: var(--dim); }
 
     /* ── Responsive ──────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .steps { grid-template-columns: 1fr 1fr; }
+      .step:nth-child(2) { border-right: none; }
+      .step:nth-child(3), .step:nth-child(4) { border-top: 1px solid var(--border); }
+      .step:nth-child(5) { grid-column: 1 / -1; border-right: none; border-top: 1px solid var(--border); }
+      .perks { grid-template-columns: repeat(2, 1fr); }
+    }
     @media (max-width: 660px) {
       nav { padding: 16px 20px; }
       .nav-tag { display: none; }
@@ -331,11 +332,14 @@
       section { padding: 60px 20px; }
       #apply { padding: 60px 20px; }
       .stats-inner { grid-template-columns: 1fr; }
-      .stat { border-right: none; border-bottom: 1px solid var(--border); }
+      .stat { border-right: none; border-bottom: 1px solid var(--border); padding: 28px 24px; }
       .stat:last-child { border-bottom: none; }
+      .stat-desc { white-space: normal; }
       .steps { grid-template-columns: 1fr; }
       .step { border-right: none; border-bottom: 1px solid var(--border); }
       .step:last-child { border-bottom: none; }
+      .step:nth-child(3), .step:nth-child(4), .step:nth-child(5) { border-top: none; grid-column: auto; }
+      .perks { grid-template-columns: 1fr; }
       .form-grid { grid-template-columns: 1fr; }
       .fg.full { grid-column: 1; }
       .hero-facts { gap: 16px; }
@@ -374,15 +378,15 @@
     <div class="stats-inner">
       <div class="stat">
         <div class="stat-val">R1,000</div>
-        <div class="stat-desc">Once off joining fee</div>
+        <div class="stat-desc">Joining fee, once off</div>
       </div>
       <div class="stat">
         <div class="stat-val">R500</div>
-        <div class="stat-desc">Starter stock, yours to sell from day one</div>
+        <div class="stat-desc">Starter stock on day one</div>
       </div>
       <div class="stat">
-        <div class="stat-val">30</div>
-        <div class="stat-desc">Days to place your first order or access is revoked</div>
+        <div class="stat-val">30 days</div>
+        <div class="stat-desc">To place your first order</div>
       </div>
     </div>
   </div>
@@ -424,7 +428,6 @@
     </div>
   </section>
 
-  <hr class="divider">
 
   <!-- What you get -->
   <section>
@@ -454,7 +457,6 @@
     </div>
   </section>
 
-  <hr class="divider">
 
   <!-- Rules -->
   <section>
@@ -556,7 +558,7 @@
   </footer>
 
   <script>
-    const APPS_SCRIPT_URL = '';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwGGoMmal0aEpaXB46fw4Pk4DDXDOdnsVk3nwzMTUZJAq49Vl2TcICNpW0pVXI6A9Oq/exec';
 
     document.getElementById('waitlist-form').addEventListener('submit', async (e) => {
       e.preventDefault();
