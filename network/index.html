@@ -583,11 +583,19 @@
       let ok = false;
       if (APPS_SCRIPT_URL) {
         try {
-          await fetch(APPS_SCRIPT_URL, {
-            method: 'POST',
+          const params = new URLSearchParams({
+            submittedAt: payload.data.submittedAt,
+            fname:       payload.data.fname,
+            lname:       payload.data.lname,
+            whatsapp:    payload.data.whatsapp,
+            area:        payload.data.area,
+            volume:      payload.data.volume,
+            source:      payload.data.source,
+            notes:       payload.data.notes,
+          });
+          await fetch(APPS_SCRIPT_URL + '?' + params.toString(), {
+            method: 'GET',
             mode: 'no-cors',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify(payload),
           });
           ok = true;
         } catch (err) { console.warn(err); }
