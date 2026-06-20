@@ -317,7 +317,7 @@ const Admin = (() => {
     const exportData = (name, data, header) => {
       const a = document.createElement('a');
       a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(header + '\n' + data);
-      a.download = `smoke420_${name}_${Data.fmtDate(new Date()).replace(/\//g,'-')}.csv`;
+      a.download = `ssignals_${name}_${Data.fmtDate(new Date()).replace(/\//g,'-')}.csv`;
       a.click();
     };
 
@@ -418,7 +418,7 @@ const Admin = (() => {
   function saveSettings() {
     const s = Auth.getSession();
     const settings = {
-      appName:           document.getElementById('cfg-name').value.trim() || 'Smoke420',
+      appName:           document.getElementById('cfg-name').value.trim() || 'Smoke Signals',
       branch:            document.getElementById('cfg-branch').value.trim() || 'Cape Town',
       currency:          document.getElementById('cfg-currency').value.trim() || 'R',
       lowStockThreshold: parseInt(document.getElementById('cfg-threshold').value, 10) || 10,
@@ -468,7 +468,7 @@ const Setup = (() => {
               <div class="step-num">1</div>
               <div class="step-body">
                 <strong>Create a Google Spreadsheet</strong><br>
-                Go to sheets.google.com → New spreadsheet. Name it "Smoke420".
+                Go to sheets.google.com → New spreadsheet. Name it "Smoke Signals".
               </div>
             </div>
             <div class="setup-step">

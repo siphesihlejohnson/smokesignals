@@ -114,7 +114,7 @@ const UI = (() => {
     const s = Auth.getSession();
     const settings = Data.getSettings();
     document.getElementById('top-bar').innerHTML = `
-      <span class="top-brand">${settings.appName || 'SMOKE420'}</span>
+      <span class="top-brand">${settings.appName || 'SMOKE SIGNALS'}</span>
       <span class="top-sep">|</span>
       <span class="top-branch">${settings.branch || 'CAPE TOWN'}</span>
       <span class="top-sep">|</span>

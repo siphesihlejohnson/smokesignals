@@ -1,7 +1,7 @@
 'use strict';
 
 const CONFIG = {
-  APP_NAME: 'Smoke420',
+  APP_NAME: 'Smoke Signals',
   BRANCH: 'Cape Town',
   CURRENCY: 'R',
   LOW_STOCK_THRESHOLD: 10,
@@ -12,19 +12,19 @@ const CONFIG = {
   SETUP_CODE: 'SMOKE420NETWORK',
 
   KEYS: {
-    SALES:        'smoke420_sales',
-    PRODUCTS:     'smoke420_products',
-    CUSTOMERS:    'smoke420_customers',
-    STAFF:        'smoke420_staff',
-    AUDIT:        'smoke420_audit',
-    RESTOCKS:     'smoke420_restocks',
-    SETTINGS:     'smoke420_settings',
-    SESSION:      'smoke420_session',
-    SYNC_QUEUE:   'smoke420_syncQueue',
-    INITIALIZED:  'smoke420_initialized',
-    LAST_SYNC:    'smoke420_lastSync',
-    SYNC_HISTORY: 'smoke420_syncHistory',
-    ACTIVE_TAB:   'smoke420_activeTab',
+    SALES:        'ssignals_sales',
+    PRODUCTS:     'ssignals_products',
+    CUSTOMERS:    'ssignals_customers',
+    STAFF:        'ssignals_staff',
+    AUDIT:        'ssignals_audit',
+    RESTOCKS:     'ssignals_restocks',
+    SETTINGS:     'ssignals_settings',
+    SESSION:      'ssignals_session',
+    SYNC_QUEUE:   'ssignals_syncQueue',
+    INITIALIZED:  'ssignals_initialized',
+    LAST_SYNC:    'ssignals_lastSync',
+    SYNC_HISTORY: 'ssignals_syncHistory',
+    ACTIVE_TAB:   'ssignals_activeTab',
   },
 
   SEED_STAFF: [

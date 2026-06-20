@@ -92,7 +92,7 @@ const Auth = (() => {
     container.innerHTML = `
       <div class="login-wrap">
         <div class="login-brand">
-          <div class="brand-name">SMOKE420</div>
+          <div class="brand-name">SMOKE SIGNALS</div>
           <div class="brand-sub">${Data.getSettings().branch || 'CAPE TOWN'}</div>
         </div>
         <div class="login-box">
@@ -232,7 +232,7 @@ const Auth = (() => {
     container.innerHTML = `
       <div class="login-wrap">
         <div class="login-brand">
-          <div class="brand-name">SMOKE420</div>
+          <div class="brand-name">SMOKE SIGNALS</div>
           <div class="brand-sub">FIRST RUN SETUP</div>
         </div>
         <div class="login-box setup-wizard">

@@ -157,7 +157,7 @@ const Reports = (() => {
     const s = Auth.getSession();
     Data.addAudit('EXPORT_CSV', 'Full report exported', s?.staffId);
 
-    let csv = '=== SMOKE420 FULL REPORT ===\n\n';
+    let csv = '=== SMOKE SIGNALS FULL REPORT ===\n\n';
 
     csv += '=== MONTHLY REVENUE ===\n';
     csv += 'Month,Revenue,Cash,EFT,Sales Count\n';
@@ -173,7 +173,7 @@ const Reports = (() => {
 
     const a = document.createElement('a');
     a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-    a.download = `smoke420_report_${Data.fmtDate(new Date()).replace(/\//g,'-')}.csv`;
+    a.download = `ssignals_report_${Data.fmtDate(new Date()).replace(/\//g,'-')}.csv`;
     a.click();
 
     UI.toast('Report exported', 'success');

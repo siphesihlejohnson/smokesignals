@@ -1,5 +1,5 @@
 // ============================================================================
-// Smoke420 — Google Apps Script
+// Smoke Signals — Google Apps Script
 // Paste this ENTIRE file into the Apps Script editor (Extensions → Apps Script)
 // Deploy as Web App: Execute as Me, Anyone can access
 // ============================================================================
