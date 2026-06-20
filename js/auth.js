@@ -136,6 +136,9 @@ const Auth = (() => {
               <button class="num-btn" data-key="${k}">${k}</button>
             `).join('')}
           </div>
+          <div id="login-forgot" style="display:none;text-align:center;margin-top:8px;">
+            <button class="btn-link" onclick="Auth.showForgotPIN()">Forgot PIN?</button>
+          </div>
         </div>
         <div class="login-version">v${CONFIG.VERSION}</div>
       </div>
@@ -167,6 +170,8 @@ const Auth = (() => {
     updateDots();
     document.querySelectorAll('.staff-btn').forEach(b => b.classList.toggle('active', b.dataset.id === id));
     setMsg('');
+    const forgotEl = document.getElementById('login-forgot');
+    if (forgotEl) forgotEl.style.display = 'block';
 
     if (_selectedStaff && !_selectedStaff.pinHash) {
       setMsg('PIN not set. Contact admin.', 'warn');
@@ -393,6 +398,103 @@ const Auth = (() => {
     showLoginScreen();
   }
 
+  // ─── Forgot PIN (pre-login reset via master code) ────────────────────────────
+  function showForgotPIN() {
+    if (!_selectedStaff) return;
+    const target = _selectedStaff;
+
+    let _fpStep = 1, _fpNewPin = '', _fpBuf = '';
+
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-box">
+        <div class="modal-title">[ RESET PIN — ${target.name} ]</div>
+        <div id="fp-code-area">
+          <div class="modal-body">Enter the master setup code to continue.</div>
+          <input type="password" id="fp-code" placeholder="Setup code"
+            style="width:100%;padding:10px;background:#0d1a0d;border:1px solid #1a4a1a;color:#e8f5eb;font-family:monospace;font-size:1rem;outline:none;margin-bottom:8px;">
+          <div id="fp-msg" class="login-msg"></div>
+          <div class="modal-actions">
+            <button class="btn btn-primary" id="fp-verify-btn">VERIFY</button>
+            <button class="btn btn-secondary" id="fp-cancel-btn">CANCEL</button>
+          </div>
+        </div>
+        <div id="fp-pin-area" style="display:none;">
+          <div class="pin-label" id="fp-pin-label">ENTER NEW PIN</div>
+          <div class="pin-dots" id="fp-dots">
+            <span id="fpd-0">○</span><span id="fpd-1">○</span>
+            <span id="fpd-2">○</span><span id="fpd-3">○</span>
+          </div>
+          <div id="fp-pin-msg" class="login-msg"></div>
+          <div class="numpad">
+            ${[1,2,3,4,5,6,7,8,9,'CLR',0,'DEL'].map(k => `
+              <button class="num-btn" data-fpk="${k}">${k}</button>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    function updFpDots() {
+      for (let i = 0; i < 4; i++) {
+        const d = document.getElementById(`fpd-${i}`);
+        if (d) d.textContent = i < _fpBuf.length ? '◉' : '○';
+      }
+    }
+
+    async function advanceFp() {
+      if (_fpStep === 1) {
+        _fpNewPin = _fpBuf; _fpBuf = ''; _fpStep = 2;
+        document.getElementById('fp-pin-label').textContent = 'CONFIRM NEW PIN';
+        updFpDots();
+      } else if (_fpStep === 2) {
+        if (_fpBuf !== _fpNewPin) {
+          document.getElementById('fp-pin-msg').textContent = 'PINs do not match. Try again.';
+          document.getElementById('fp-pin-msg').className = 'login-msg error';
+          _fpBuf = ''; _fpNewPin = ''; _fpStep = 1;
+          document.getElementById('fp-pin-label').textContent = 'ENTER NEW PIN';
+          updFpDots();
+          return;
+        }
+        const hashed = await hashPIN(_fpBuf);
+        Data.updateStaffMember({ id: target.id, pinHash: hashed, failedAttempts: 0, lockedUntil: null });
+        Data.addAudit('PIN_RESET', `PIN reset via master code for ${target.name}`, 'MASTER');
+        Data.syncStaffPIN(Data.getStaffById(target.id));
+        overlay.remove();
+        UI.toast(`PIN reset for ${target.name}`, 'success');
+      }
+    }
+
+    overlay.querySelector('#fp-verify-btn').addEventListener('click', () => {
+      const code = document.getElementById('fp-code').value.trim().toUpperCase();
+      if (code !== CONFIG.SETUP_CODE) {
+        const msg = document.getElementById('fp-msg');
+        msg.textContent = 'Incorrect setup code.';
+        msg.className = 'login-msg error';
+        document.getElementById('fp-code').value = '';
+        return;
+      }
+      document.getElementById('fp-code-area').style.display = 'none';
+      document.getElementById('fp-pin-area').style.display = 'block';
+    });
+
+    overlay.querySelector('#fp-cancel-btn').addEventListener('click', () => overlay.remove());
+
+    overlay.querySelectorAll('.num-btn[data-fpk]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const k = btn.dataset.fpk;
+        if (k === 'CLR') { _fpBuf = ''; updFpDots(); return; }
+        if (k === 'DEL') { _fpBuf = _fpBuf.slice(0, -1); updFpDots(); return; }
+        if (_fpBuf.length >= 4) return;
+        _fpBuf += k;
+        updFpDots();
+        if (_fpBuf.length === 4) advanceFp();
+      });
+    });
+  }
+
   // ─── Admin PIN Confirm ────────────────────────────────────────────────────────
   function confirmAdminPIN(message) {
     return new Promise((resolve) => {
@@ -534,6 +636,7 @@ const Auth = (() => {
     isFirstRun,
     _verifySetupCode,
     startAdminPINSetup, handleSetupKey, cancelSetupPIN, completeSetup,
+    showForgotPIN,
     confirmAdminPIN, resetStaffPIN,
     hashPIN,
   };

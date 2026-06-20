@@ -139,6 +139,12 @@ a { color: var(--accent); }
   font-size: 0.65rem; color: var(--border-dim);
   margin-top: 16px; letter-spacing: 0.1em;
 }
+.btn-link {
+  background: none; border: none; color: var(--border-dim);
+  font-family: monospace; font-size: 0.75rem; letter-spacing: 0.08em;
+  cursor: pointer; padding: 4px 0; text-decoration: underline;
+}
+.btn-link:hover { color: var(--green-dim); }
 @keyframes shake {
   0%,100%{ transform: translateX(0); }
   10%,30%,50%,70%,90%{ transform: translateX(-8px); }
