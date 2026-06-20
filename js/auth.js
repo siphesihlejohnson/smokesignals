@@ -77,11 +77,29 @@ const Auth = (() => {
     const screen = document.getElementById('login-screen');
     screen.classList.remove('hidden');
 
-    if (isFirstRun()) {
-      renderSetupWizard(screen);
-    } else {
+    if (!isFirstRun()) {
       renderLoginForm(screen);
+      return;
     }
+
+    // May be a new device — check Sheets for existing pinHashes before showing setup
+    screen.innerHTML = `
+      <div class="login-wrap">
+        <div class="login-brand">
+          <div class="brand-name">SMOKE SIGNALS</div>
+          <div class="brand-sub">LOADING...</div>
+        </div>
+      </div>`;
+
+    Data.fetchStaffFromSheets().then(() => {
+      if (isFirstRun()) {
+        renderSetupWizard(screen);
+      } else {
+        renderLoginForm(screen);
+      }
+    }).catch(() => {
+      renderSetupWizard(screen);
+    });
   }
 
   function renderLoginForm(container) {
