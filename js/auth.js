@@ -228,7 +228,6 @@ const Auth = (() => {
   function renderSetupWizard(container) {
     _setupStep = 0;
     _setupNewPin = '';
-    const admins = Data.getStaff().filter(s => s.role === 'admin' && s.active);
 
     container.innerHTML = `
       <div class="login-wrap">
@@ -238,19 +237,14 @@ const Auth = (() => {
         </div>
         <div class="login-box setup-wizard">
           <div class="setup-title">[ INITIAL PIN SETUP ]</div>
-          <div class="setup-desc">
-            Welcome to Smoke420. Before you can use the system,<br>
-            each admin must set their PIN. Select an admin below to begin.
+          <div class="setup-desc">Enter the setup code to initialise this device.</div>
+          <div id="setup-code-area">
+            <input type="password" id="setup-code-input" placeholder="Setup code"
+              style="width:100%;padding:12px;background:#0d1a0d;border:1px solid #1a4a1a;color:#e8f5eb;font-family:monospace;font-size:1rem;letter-spacing:0.1em;outline:none;margin-bottom:10px;">
+            <div id="setup-code-msg" class="login-msg"></div>
+            <button class="btn btn-primary btn-block" onclick="Auth._verifySetupCode()">VERIFY</button>
           </div>
-          <div id="setup-admin-list">
-            ${admins.map(a => `
-              <div class="setup-admin-row" id="setup-row-${a.id}">
-                <span class="setup-admin-name">${a.name}</span>
-                <span class="setup-admin-status" id="setup-status-${a.id}">PENDING</span>
-                <button class="btn btn-sm" onclick="Auth.startAdminPINSetup('${a.id}')">SET PIN</button>
-              </div>
-            `).join('')}
-          </div>
+          <div id="setup-admin-list" class="hidden"></div>
           <div id="setup-pin-area" class="hidden">
             <div class="setup-pin-who" id="setup-pin-who"></div>
             <div class="pin-label" id="setup-pin-label">ENTER NEW PIN</div>
@@ -274,6 +268,29 @@ const Auth = (() => {
         </div>
       </div>
     `;
+    _checkSetupComplete();
+  }
+
+  function _verifySetupCode() {
+    const input = document.getElementById('setup-code-input').value.trim().toUpperCase();
+    if (input !== CONFIG.SETUP_CODE) {
+      const msg = document.getElementById('setup-code-msg');
+      msg.textContent = 'Incorrect setup code.';
+      msg.className = 'login-msg error';
+      document.getElementById('setup-code-input').value = '';
+      return;
+    }
+    document.getElementById('setup-code-area').style.display = 'none';
+    const admins = Data.getStaff().filter(s => s.role === 'admin' && s.active);
+    const list = document.getElementById('setup-admin-list');
+    list.innerHTML = admins.map(a => `
+      <div class="setup-admin-row" id="setup-row-${a.id}">
+        <span class="setup-admin-name">${a.name}</span>
+        <span class="setup-admin-status" id="setup-status-${a.id}">PENDING</span>
+        <button class="btn btn-sm" onclick="Auth.startAdminPINSetup('${a.id}')">SET PIN</button>
+      </div>
+    `).join('');
+    list.classList.remove('hidden');
     _checkSetupComplete();
   }
 
@@ -497,6 +514,7 @@ const Auth = (() => {
     showLoginScreen,
     isLoggedIn, getSession, logout, extendSession, startWatchdog,
     isFirstRun,
+    _verifySetupCode,
     startAdminPINSetup, handleSetupKey, cancelSetupPIN, completeSetup,
     confirmAdminPIN, resetStaffPIN,
     hashPIN,

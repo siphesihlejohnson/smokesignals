@@ -9,6 +9,7 @@ const CONFIG = {
   LOCKOUT_MINUTES: 5,
   MAX_FAILED_ATTEMPTS: 3,
   VERSION: '1.0.0',
+  SETUP_CODE: 'SMOKE420NETWORK',
 
   KEYS: {
     SALES:        'smoke420_sales',
