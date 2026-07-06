@@ -3,249 +3,235 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#050905">
-  <title>The Network | Cape Town</title>
+  <meta name="theme-color" content="#000000">
+  <title>SMOKE SIGNALS :: THE NETWORK</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Epilogue:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg:        #050905;
-      --surface:   #0d1a0d;
-      --green:     #00dd44;
-      --green-hi:  #00ff55;
-      --green-dim: #1a4a1a;
-      --text:      #e8f5eb;
-      --dim:       #6baa7e;
-      --border:    rgba(0,221,68,0.12);
-      --border-mid:rgba(0,221,68,0.22);
+      --bg:     #000000;
+      --panel:  #0a0a0a;
+      --ink:    #ffffff;
+      --dim:    #9a9a9a;
+      --line:   #ffffff;
+      --warn:   #ff3b3b;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { scroll-behavior: smooth; }
     body {
       background: var(--bg);
-      color: var(--text);
-      font-family: 'Epilogue', sans-serif;
-      font-size: 16px;
+      background-image:
+        radial-gradient(#1a1a1a 1px, transparent 1px);
+      background-size: 4px 4px;
+      color: var(--ink);
+      font-family: 'Space Mono', monospace;
+      font-size: 17px;
       line-height: 1.6;
       overflow-x: hidden;
     }
-    ::selection { background: var(--green); color: var(--bg); }
+    ::selection { background: var(--ink); color: var(--bg); }
+    a { color: inherit; }
+
+    .mono-hd { font-family: 'VT323', monospace; letter-spacing: 0.01em; }
+
+    /* ── Hazard divider ──────────────────────────────────── */
+    .hazard {
+      height: 10px;
+      background: repeating-linear-gradient(-45deg, #fff 0 10px, #000 10px 20px);
+      border-top: 3px solid var(--line);
+      border-bottom: 3px solid var(--line);
+    }
+
+    /* ── Marquee ─────────────────────────────────────────── */
+    .marquee {
+      background: var(--ink); color: var(--bg);
+      overflow: hidden; white-space: nowrap;
+      border-bottom: 3px solid var(--line);
+    }
+    .marquee-track {
+      display: inline-block;
+      font-weight: 700; letter-spacing: 0.04em;
+      font-size: 0.85rem; padding: 8px 0;
+      animation: mq 18s linear infinite;
+    }
+    @keyframes mq { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
     /* ── Nav ─────────────────────────────────────────────── */
     nav {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      position: sticky; top: 0; z-index: 100;
       display: flex; align-items: center; justify-content: space-between;
-      padding: 18px 32px;
-      background: rgba(5,9,5,0.9);
-      backdrop-filter: blur(10px);
-      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      background: var(--bg);
+      border-bottom: 4px double var(--line);
     }
     .nav-logo {
-      font-family: 'Syne', sans-serif;
-      font-size: 0.78rem; font-weight: 700;
-      letter-spacing: 0.25em;
-      color: var(--green);
+      display: flex; align-items: center; gap: 10px;
+      font-size: 1rem; font-weight: 700;
+      letter-spacing: 0.15em;
     }
+    .brand-mark { flex-shrink: 0; color: var(--ink); }
+    .brand-mark .cut { fill: var(--bg); }
     .nav-tag {
-      font-family: 'Syne', sans-serif;
-      font-size: 0.68rem;
+      font-size: 0.72rem;
       color: var(--dim);
-      letter-spacing: 0.1em;
+      letter-spacing: 0.05em;
     }
+    .blink { animation: blink 1.1s steps(1) infinite; }
+    @keyframes blink { 50% { opacity: 0; } }
 
     /* ── Hero ────────────────────────────────────────────── */
     .hero {
-      min-height: 100vh;
-      display: flex; align-items: center;
-      padding: 130px 32px 90px;
-      position: relative;
+      padding: 56px 24px 48px;
+      text-align: center;
+      border-bottom: 3px solid var(--line);
     }
-    .hero::after {
-      content: '';
-      position: absolute; top: 0; right: 0;
-      width: 50%; height: 100%;
-      background: radial-gradient(ellipse at 80% 40%, rgba(0,221,68,0.05) 0%, transparent 65%);
-      pointer-events: none;
+    .hero-mark { width: 116px; height: 116px; margin: 0 auto 18px; display: block; }
+    .hero-word { font-size: 1.3rem; font-weight: 700; letter-spacing: 0.35em; margin-bottom: 26px; }
+    h1.mono-hd {
+      font-size: clamp(2.8rem, 10vw, 5.2rem);
+      line-height: 0.95;
+      margin-bottom: 20px;
     }
-    .hero-inner { max-width: 760px; }
-    .hero-label {
-      font-family: 'Syne', sans-serif;
-      font-size: 0.68rem; font-weight: 600;
-      letter-spacing: 0.25em;
-      color: var(--green);
-      margin-bottom: 22px;
-    }
-    h1 {
-      font-family: 'Syne', sans-serif;
-      font-size: clamp(2.6rem, 7.5vw, 5rem);
-      font-weight: 700;
-      line-height: 1.06;
-      letter-spacing: -0.02em;
-      margin-bottom: 22px;
-    }
-    h1 em { color: var(--green); font-style: normal; }
+    h1.mono-hd em { font-style: normal; text-decoration: underline; text-decoration-style: wavy; text-underline-offset: 8px; }
     .hero-body {
-      font-size: clamp(1rem, 2vw, 1.15rem);
+      font-size: 0.95rem;
       color: var(--dim);
       max-width: 480px;
-      margin-bottom: 36px;
-      font-weight: 300;
-      line-height: 1.7;
+      margin: 0 auto 26px;
     }
-    .hero-body strong { color: var(--text); font-weight: 500; }
-    .hero-facts {
-      display: flex; gap: 28px; flex-wrap: wrap;
-      margin-bottom: 36px;
+    .hero-body strong { color: var(--ink); }
+    .tag-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 28px; }
+    .tag-box {
+      border: 2px solid var(--line);
+      padding: 6px 12px;
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em;
     }
-    .hero-fact {
-      font-family: 'Syne', sans-serif;
-      font-size: 0.78rem;
-    }
-    .hero-fact span { color: var(--green); font-weight: 700; margin-right: 6px; }
     .cta-btn {
       display: inline-flex; align-items: center; gap: 10px;
-      background: var(--green); color: #050905;
-      font-family: 'Syne', sans-serif;
-      font-size: 0.78rem; font-weight: 700;
-      letter-spacing: 0.1em; text-transform: uppercase;
+      background: var(--ink); color: var(--bg);
+      font-family: 'VT323', monospace;
+      font-size: 1.3rem; font-weight: 400;
+      letter-spacing: 0.06em; text-transform: uppercase;
       text-decoration: none;
-      padding: 15px 26px;
-      border: none; cursor: pointer;
-      transition: background 0.15s;
+      padding: 12px 30px;
+      border: 3px solid var(--line);
+      box-shadow: 6px 6px 0 var(--ink);
+      margin: 0 6px 6px 0;
+      cursor: pointer;
     }
-    .cta-btn:hover { background: var(--green-hi); }
-    .cta-arrow { font-size: 0.9rem; }
+    .cta-btn:active { box-shadow: 2px 2px 0 var(--ink); transform: translate(4px, 4px); }
 
     /* ── Stats ───────────────────────────────────────────── */
-    .stats {
-      background: var(--surface);
-      border-top: 1px solid var(--border-mid);
-      border-bottom: 1px solid var(--border-mid);
-    }
     .stats-inner {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
     }
     .stat {
-      padding: 40px 48px;
-      border-right: 1px solid var(--border);
+      padding: 26px 20px;
+      border-right: 2px solid var(--line);
+      border-bottom: 3px solid var(--line);
       text-align: center;
     }
     .stat:last-child { border-right: none; }
-    .stat-val {
-      font-family: 'Syne', sans-serif;
-      font-size: 2.4rem; font-weight: 800;
-      color: var(--green); line-height: 1;
-      margin-bottom: 8px;
+    .stat-val.mono-hd {
+      font-size: 2.6rem; line-height: 1;
+      margin-bottom: 4px;
     }
     .stat-desc {
-      font-size: 0.72rem; color: var(--dim);
-      letter-spacing: 0.06em; text-transform: uppercase;
-      white-space: nowrap;
+      font-size: 0.68rem; color: var(--dim);
+      letter-spacing: 0.04em; text-transform: uppercase;
     }
 
     /* ── Sections ────────────────────────────────────────── */
-    section { padding: 96px 48px; max-width: 1100px; margin: 0 auto; }
-    section.full { max-width: 100%; padding: 96px 0; }
-    .section-label {
-      font-family: 'Syne', sans-serif;
-      font-size: 0.68rem; font-weight: 600;
-      letter-spacing: 0.25em; color: var(--green);
-      text-transform: uppercase; margin-bottom: 12px;
+    section { padding: 56px 24px; max-width: 1000px; margin: 0 auto; }
+    .thread-label {
+      font-size: 0.78rem; font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-bottom: 10px;
+      display: inline-block;
+      border-bottom: 2px solid var(--line);
+      padding-bottom: 2px;
     }
-    h2 {
-      font-family: 'Syne', sans-serif;
-      font-size: clamp(1.5rem, 3.5vw, 2.2rem);
-      font-weight: 700; line-height: 1.2;
+    h2.mono-hd {
+      font-size: clamp(1.8rem, 4.5vw, 2.6rem);
+      line-height: 1.15;
       margin-bottom: 14px;
     }
     .section-body {
-      color: var(--dim); font-size: 1rem;
-      max-width: 520px; margin-bottom: 44px;
-      font-weight: 300; line-height: 1.7;
+      color: var(--dim); font-size: 0.92rem;
+      max-width: 540px; margin-bottom: 34px;
     }
 
-    /* ── How it works ────────────────────────────────────── */
+    /* ── Steps ───────────────────────────────────────────── */
     .steps {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      border: 1px solid var(--border-mid);
+      border: 2px solid var(--line);
     }
     .step {
-      padding: 32px 28px;
-      border-right: 1px solid var(--border);
+      padding: 22px 18px;
+      border-right: 2px solid var(--line);
     }
     .step:last-child { border-right: none; }
-    .step-n {
-      font-family: 'Syne', sans-serif;
-      font-size: 0.62rem; font-weight: 700;
-      color: var(--green); letter-spacing: 0.15em;
-      margin-bottom: 10px;
-    }
-    .step-title {
-      font-family: 'Syne', sans-serif;
-      font-size: 0.88rem; font-weight: 600;
-      margin-bottom: 8px;
-    }
-    .step-copy { font-size: 0.8rem; color: var(--dim); line-height: 1.55; }
+    .step-n.mono-hd { font-size: 1.3rem; margin-bottom: 6px; }
+    .step-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; }
+    .step-copy { font-size: 0.78rem; color: var(--dim); line-height: 1.55; }
 
-    /* ── What you get ────────────────────────────────────── */
+    /* ── Perks (zine clippings) ──────────────────────────── */
     .perks {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 1px;
-      background: var(--border);
-      border: 1px solid var(--border-mid);
+      gap: 18px;
     }
     .perk {
-      background: var(--bg);
-      padding: 36px 30px;
+      background: var(--panel);
+      border: 2px solid var(--line);
+      padding: 24px 20px;
+      position: relative;
     }
-    .perk-title {
-      font-family: 'Syne', sans-serif;
-      font-size: 0.88rem; font-weight: 600;
-      margin-bottom: 8px;
-      color: var(--text);
+    .perk:nth-child(odd)  { transform: rotate(-0.8deg); }
+    .perk:nth-child(even) { transform: rotate(0.8deg); }
+    .perk::before {
+      content: '';
+      position: absolute; top: -8px; left: 50%;
+      width: 46px; height: 16px;
+      margin-left: -23px;
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.3);
     }
-    .perk-copy { font-size: 0.82rem; color: var(--dim); line-height: 1.6; }
+    .perk-title { font-size: 0.85rem; font-weight: 700; margin-bottom: 8px; }
+    .perk-copy { font-size: 0.78rem; color: var(--dim); line-height: 1.6; }
 
     /* ── Rules ───────────────────────────────────────────── */
     .rules-wrap {
-      border: 1px solid var(--border-mid);
-      border-left: 3px solid var(--green);
-      background: var(--surface);
-      padding: 30px;
+      border: 2px solid var(--line);
     }
-    .rules-wrap h3 {
-      font-family: 'Syne', sans-serif;
-      font-size: 0.7rem; font-weight: 700;
-      letter-spacing: 0.2em; color: var(--green);
-      text-transform: uppercase; margin-bottom: 18px;
+    .rules-wrap h3.mono-hd {
+      font-size: 1.1rem; letter-spacing: 0.05em;
+      padding: 10px 20px;
+      background: var(--ink); color: var(--bg);
     }
+    .rules-body { padding: 22px 24px; }
     .rule {
-      display: flex; gap: 14px;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-      font-size: 0.87rem;
+      display: flex; gap: 12px;
+      padding: 9px 0;
+      border-bottom: 1px dashed rgba(255,255,255,0.3);
+      font-size: 0.86rem;
     }
     .rule:last-child { border-bottom: none; }
-    .rule-n {
-      font-family: 'Syne', sans-serif;
-      color: var(--green); font-weight: 700;
-      flex-shrink: 0; font-size: 0.78rem;
-    }
+    .rule-box { flex-shrink: 0; font-weight: 700; }
 
     /* ── Apply ───────────────────────────────────────────── */
     #apply {
-      background: var(--surface);
-      border-top: 1px solid var(--border-mid);
-      border-bottom: 1px solid var(--border-mid);
-      padding: 84px 32px;
+      background: var(--panel);
+      border-top: 3px solid var(--line);
+      border-bottom: 3px solid var(--line);
+      padding: 56px 24px;
     }
-    #apply .inner { max-width: 1100px; margin: 0 auto; }
-    .form-wrap { max-width: 580px; margin-top: 0; }
+    #apply .inner { max-width: 1000px; margin: 0 auto; }
+    .form-wrap { max-width: 560px; }
     .form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -254,37 +240,34 @@
     .fg { display: flex; flex-direction: column; gap: 5px; }
     .fg.full { grid-column: 1 / -1; }
     label {
-      font-family: 'Syne', sans-serif;
-      font-size: 0.62rem; font-weight: 600;
-      letter-spacing: 0.15em; text-transform: uppercase;
+      font-size: 0.68rem; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
       color: var(--dim);
     }
     input, select, textarea {
       background: var(--bg);
-      border: 1px solid var(--green-dim);
-      color: var(--text);
-      font-family: 'Syne', sans-serif;
-      font-size: 0.85rem;
-      padding: 11px 13px;
+      border: 2px solid var(--ink);
+      color: var(--ink);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.88rem;
+      padding: 10px 12px;
       width: 100%; outline: none;
-      transition: border-color 0.15s;
       appearance: none;
     }
-    input:focus, select:focus, textarea:focus { border-color: var(--green); }
-    input::placeholder, textarea::placeholder { color: var(--green-dim); }
+    input:focus, select:focus, textarea:focus { background: var(--ink); color: var(--bg); }
+    input::placeholder, textarea::placeholder { color: var(--dim); }
     select { cursor: pointer; }
-    select option { background: var(--bg); }
+    select option { background: var(--bg); color: var(--ink); }
     textarea { resize: vertical; min-height: 72px; }
     .submit-btn {
-      margin-top: 6px; width: 100%; padding: 15px;
-      background: var(--green); color: #050905;
-      border: none; cursor: pointer;
-      font-family: 'Syne', sans-serif;
-      font-size: 0.8rem; font-weight: 700;
-      letter-spacing: 0.12em; text-transform: uppercase;
-      transition: background 0.15s;
+      margin-top: 8px; width: 100%; padding: 14px;
+      background: var(--ink); color: var(--bg);
+      border: 3px solid var(--line); cursor: pointer;
+      font-family: 'VT323', monospace;
+      font-size: 1.2rem; letter-spacing: 0.05em; text-transform: uppercase;
+      box-shadow: 5px 5px 0 var(--ink);
     }
-    .submit-btn:hover { background: var(--green-hi); }
+    .submit-btn:active:not(:disabled) { box-shadow: 1px 1px 0 var(--ink); transform: translate(4px,4px); }
     .submit-btn:disabled { opacity: 0.45; cursor: not-allowed; }
     .form-note {
       font-size: 0.72rem; color: var(--dim);
@@ -293,169 +276,179 @@
 
     /* ── Validation ─────────────────────────────────────── */
     .field-error {
-      font-family: 'Syne', sans-serif;
-      font-size: 0.68rem;
-      color: #ff4455;
+      font-size: 0.7rem;
+      color: var(--warn);
       margin-top: 3px;
+      font-weight: 700;
     }
     input.invalid, select.invalid, textarea.invalid {
-      border-color: #ff4455;
+      border-color: var(--warn);
     }
 
     /* ── Success ─────────────────────────────────────────── */
-    #success { display: none; padding: 32px 0; }
-    .success-mark {
-      font-family: 'Syne', sans-serif;
-      font-size: 2rem; color: var(--green); margin-bottom: 14px;
-    }
-    #success h3 {
-      font-family: 'Syne', sans-serif;
-      font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;
-    }
+    #success { display: none; padding: 24px 0; }
+    .success-mark.mono-hd { font-size: 2.4rem; margin-bottom: 10px; }
+    #success h3.mono-hd { font-size: 1.4rem; margin-bottom: 8px; }
     #success p { color: var(--dim); font-size: 0.88rem; }
 
     /* ── Footer ──────────────────────────────────────────── */
     footer {
-      padding: 28px 32px;
-      border-top: 1px solid var(--border);
+      padding: 22px 24px;
       display: flex; align-items: center; justify-content: space-between;
-      flex-wrap: wrap; gap: 8px;
+      flex-wrap: wrap; gap: 14px;
     }
-    .foot-logo {
-      font-family: 'Syne', sans-serif;
-      font-size: 0.72rem; font-weight: 700;
-      letter-spacing: 0.2em; color: var(--green);
+    .foot-logo { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; }
+    .foot-note { font-size: 0.7rem; color: var(--dim); }
+    .hit-counter {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 0.68rem; color: var(--dim); letter-spacing: 0.05em;
     }
-    .foot-note { font-size: 0.72rem; color: var(--dim); }
+    .hit-counter .digits {
+      font-family: 'VT323', monospace; font-size: 1rem;
+      color: var(--ink); background: var(--panel);
+      border: 1px solid var(--line);
+      padding: 1px 6px; letter-spacing: 0.15em;
+    }
 
     /* ── Responsive ──────────────────────────────────────── */
     @media (max-width: 900px) {
       .steps { grid-template-columns: 1fr 1fr; }
       .step:nth-child(2) { border-right: none; }
-      .step:nth-child(3), .step:nth-child(4) { border-top: 1px solid var(--border); }
-      .step:nth-child(5) { grid-column: 1 / -1; border-right: none; border-top: 1px solid var(--border); }
+      .step:nth-child(3), .step:nth-child(4) { border-top: 2px solid var(--line); }
+      .step:nth-child(5) { grid-column: 1 / -1; border-right: none; border-top: 2px solid var(--line); }
       .perks { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 660px) {
-      nav { padding: 16px 20px; }
+      nav { padding: 12px 16px; }
       .nav-tag { display: none; }
-      .hero { padding: 110px 20px 70px; }
-      section { padding: 60px 20px; }
-      #apply { padding: 60px 20px; }
+      section { padding: 44px 18px; }
+      #apply { padding: 44px 18px; }
       .stats-inner { grid-template-columns: 1fr; }
-      .stat { border-right: none; border-bottom: 1px solid var(--border); padding: 28px 24px; }
-      .stat:last-child { border-bottom: none; }
-      .stat-desc { white-space: normal; }
+      .stat { border-right: none; padding: 22px 20px; }
       .steps { grid-template-columns: 1fr; }
-      .step { border-right: none; border-bottom: 1px solid var(--border); }
+      .step { border-right: none; border-bottom: 2px solid var(--line); }
       .step:last-child { border-bottom: none; }
       .step:nth-child(3), .step:nth-child(4), .step:nth-child(5) { border-top: none; grid-column: auto; }
       .perks { grid-template-columns: 1fr; }
+      .perk { transform: none !important; }
       .form-grid { grid-template-columns: 1fr; }
       .fg.full { grid-column: 1; }
-      .hero-facts { gap: 16px; }
-      .rules-wrap { padding: 20px; }
-      footer { flex-direction: column; }
+      footer { flex-direction: column; align-items: flex-start; }
     }
   </style>
 </head>
 <body>
 
+  <div class="marquee">
+    <div class="marquee-track">
+      ★ SMOKE SIGNALS NETWORK ★ CAPE TOWN, MEMBERS ONLY ★ R1,000 TO JOIN ★ FIRST ORDER WITHIN 30 DAYS ★ APPLY BELOW ★
+      ★ SMOKE SIGNALS NETWORK ★ CAPE TOWN, MEMBERS ONLY ★ R1,000 TO JOIN ★ FIRST ORDER WITHIN 30 DAYS ★ APPLY BELOW ★
+    </div>
+  </div>
+
   <nav>
-    <div class="nav-logo">The Network</div>
-    <div class="nav-tag">Cape Town. Members only.</div>
+    <div class="nav-logo">
+      <svg class="brand-mark" width="24" height="24" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true">
+        <path d="M8,20 L30,40 L50,24 L70,40 L92,20 L50,96 Z"/>
+        <path class="cut" d="M58,12 L36,50 L50,50 L42,88 L70,43 L54,43 Z"/>
+      </svg>
+      SMOKE SIGNALS
+    </div>
+    <div class="nav-tag">Cape Town <span class="blink">_</span></div>
   </nav>
 
   <!-- Hero -->
   <div class="hero">
-    <div class="hero-inner">
-      <p class="hero-label">Closed network. Cape Town.</p>
-      <h1>Not a plug.<br><em>A network.</em></h1>
-      <p class="hero-body">
-        We source. You sell. <strong>The margin is yours.</strong><br>
-        This is a closed buying network for people who already know the market
-        and just need better access to it.
-      </p>
-      <div class="hero-facts">
-        <p class="hero-fact"><span>R1,000</span> to join</p>
-        <p class="hero-fact"><span>Every</span> application vetted personally</p>
-      </div>
-      <a href="#apply" class="cta-btn">Request access <span class="cta-arrow">&#8594;</span></a>
+    <svg class="hero-mark" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true">
+      <path d="M8,20 L30,40 L50,24 L70,40 L92,20 L50,96 Z"/>
+      <path class="cut" d="M58,12 L36,50 L50,50 L42,88 L70,43 L54,43 Z"/>
+    </svg>
+    <p class="hero-word">SMOKE SIGNALS</p>
+    <h1 class="mono-hd">Not a plug.<br><em>A network.</em></h1>
+    <p class="hero-body">
+      We source it, you sell it, <strong>the margin's yours.</strong> A closed
+      buying network for people who already know the game and just want better access.
+    </p>
+    <div class="tag-row">
+      <span class="tag-box">R1,000 TO JOIN</span>
+      <span class="tag-box">EVERY APP REVIEWED BY US, PERSONALLY</span>
     </div>
+    <a href="#apply" class="cta-btn">Request Access &gt;&gt;</a>
   </div>
 
+  <div class="hazard"></div>
+
   <!-- Stats -->
-  <div class="stats">
-    <div class="stats-inner">
-      <div class="stat">
-        <div class="stat-val">R1,000</div>
-        <div class="stat-desc">Joining fee, once off</div>
-      </div>
-      <div class="stat">
-        <div class="stat-val">R500</div>
-        <div class="stat-desc">Starter stock on day one</div>
-      </div>
-      <div class="stat">
-        <div class="stat-val">30 days</div>
-        <div class="stat-desc">To place your first order</div>
-      </div>
+  <div class="stats-inner">
+    <div class="stat">
+      <div class="stat-val mono-hd">R1,000</div>
+      <div class="stat-desc">Joining fee, once off</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val mono-hd">R500</div>
+      <div class="stat-desc">Starter stock, day one</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val mono-hd">30 days</div>
+      <div class="stat-desc">To place your first order</div>
     </div>
   </div>
 
   <!-- How it works -->
   <section>
-    <p class="section-label">The model</p>
-    <h2>Simple. No moving parts.</h2>
+    <p class="thread-label">// 01 · THE MODEL</p>
+    <h2 class="mono-hd">Simple. No moving parts.</h2>
     <p class="section-body">
-      You pay once to get in. Half of that comes back to you as stock you can sell
-      from day one. After that, you order on your own terms at pricing retail cannot touch.
+      Pay once to get in. Half of that comes straight back to you as stock you can
+      sell from day one. After that, order on your own terms at prices retail can't touch.
     </p>
     <div class="steps">
       <div class="step">
-        <p class="step-n">01.</p>
+        <p class="step-n mono-hd">[01]</p>
         <p class="step-title">Apply</p>
-        <p class="step-copy">Fill in the form. We review every application personally. Not everyone gets in.</p>
+        <p class="step-copy">Fill in the form below. We look at every application ourselves. Not everyone gets in.</p>
       </div>
       <div class="step">
-        <p class="step-n">02.</p>
+        <p class="step-n mono-hd">[02]</p>
         <p class="step-title">Pay and start</p>
-        <p class="step-copy">R1,000 joining fee. R500 of that comes back as product ready to sell. You are already in profit before your first order.</p>
+        <p class="step-copy">R1,000 joining fee. R500 comes straight back as product ready to sell — you're in profit before order one.</p>
       </div>
       <div class="step">
-        <p class="step-n">03.</p>
-        <p class="step-title">First order within 30 days</p>
-        <p class="step-copy">We only carry active members. No first order in 30 days and your access is revoked. No exceptions.</p>
+        <p class="step-n mono-hd">[03]</p>
+        <p class="step-title">Order within 30 days</p>
+        <p class="step-copy">We only keep active members. No first order in 30 days, access gets pulled. No exceptions.</p>
       </div>
       <div class="step">
-        <p class="step-n">04.</p>
+        <p class="step-n mono-hd">[04]</p>
         <p class="step-title">Collect and sell</p>
         <p class="step-copy">We source and deliver. What you charge on your end is entirely your business.</p>
       </div>
       <div class="step">
-        <p class="step-n">05.</p>
+        <p class="step-n mono-hd">[05]</p>
         <p class="step-title">Keep going</p>
-        <p class="step-copy">Order when you need to. Pricing gets better as you move more volume. That is the point of being in.</p>
+        <p class="step-copy">Order whenever you need to. Pricing gets better the more volume you move.</p>
       </div>
     </div>
   </section>
 
+  <div class="hazard"></div>
 
   <!-- What you get -->
   <section>
-    <p class="section-label">What being in gets you</p>
-    <h2>Access that is worth more than the fee.</h2>
+    <p class="thread-label">// 02 · WHAT'S IN IT FOR YOU</p>
+    <h2 class="mono-hd">Access worth more than the fee.</h2>
     <p class="section-body">
       The joining fee buys you a seat. The seat gets you pricing, product and a
-      network that took time to build. That is the value.
+      network that took years to build. That's the whole value proposition.
     </p>
     <div class="perks">
       <div class="perk">
         <p class="perk-title">Wholesale pricing</p>
-        <p class="perk-copy">Bulk sourced, direct. Your cost is lower than anything available retail. Your margin starts before you sell a unit.</p>
+        <p class="perk-copy">Bulk sourced, direct. Your cost is lower than anything retail. Margin starts before you sell a unit.</p>
       </div>
       <div class="perk">
         <p class="perk-title">Consistent stock</p>
-        <p class="perk-copy">No dry spells. Orders run on a cycle. You know what is coming and when. Plan your sales around it.</p>
+        <p class="perk-copy">No dry spells. Orders run on a cycle so you know what's coming and when. Plan around it.</p>
       </div>
       <div class="perk">
         <p class="perk-title">One point of contact</p>
@@ -463,37 +456,25 @@
       </div>
       <div class="perk">
         <p class="perk-title">Your business stays yours</p>
-        <p class="perk-copy">Your customers, your pricing, your operation. We supply. Everything after that is on you.</p>
+        <p class="perk-copy">Your customers, your pricing, your operation. We supply — everything after that is on you.</p>
       </div>
     </div>
   </section>
 
+  <div class="hazard"></div>
 
   <!-- Rules -->
   <section>
-    <p class="section-label">Before you apply</p>
-    <h2>A few things that do not move.</h2>
+    <p class="thread-label">// 03 · BEFORE YOU APPLY</p>
+    <h2 class="mono-hd">A few things that don't move.</h2>
     <div class="rules-wrap">
-      <h3>The rules</h3>
-      <div class="rule">
-        <span class="rule-n">01.</span>
-        <span>R1,000 joining fee. Non-refundable.</span>
-      </div>
-      <div class="rule">
-        <span class="rule-n">02.</span>
-        <span>Your first order must be placed within 30 days of joining. No activity means no access.</span>
-      </div>
-      <div class="rule">
-        <span class="rule-n">03.</span>
-        <span>Pre-payment only on all orders. No credit, no IOUs, not once.</span>
-      </div>
-      <div class="rule">
-        <span class="rule-n">04.</span>
-        <span>What happens inside this network is not for outside. Discretion is not optional.</span>
-      </div>
-      <div class="rule">
-        <span class="rule-n">05.</span>
-        <span>One strike for nonsense. Two strikes and you are out permanently. No appeals.</span>
+      <h3 class="mono-hd">The Rules</h3>
+      <div class="rules-body">
+        <div class="rule"><span class="rule-box">[01]</span><span>R1,000 joining fee. Non-refundable.</span></div>
+        <div class="rule"><span class="rule-box">[02]</span><span>First order within 30 days of joining, or access is pulled.</span></div>
+        <div class="rule"><span class="rule-box">[03]</span><span>Pre-payment only on all orders. No credit, no IOUs, not once.</span></div>
+        <div class="rule"><span class="rule-box">[04]</span><span>What happens in the network stays in the network. Discretion isn't optional.</span></div>
+        <div class="rule"><span class="rule-box">[05]</span><span>One strike for nonsense. Two and you're out for good. No appeals.</span></div>
       </div>
     </div>
   </section>
@@ -501,11 +482,11 @@
   <!-- Apply -->
   <div id="apply">
     <div class="inner">
-      <p class="section-label">Apply</p>
-      <h2>Request access.</h2>
+      <p class="thread-label">// 04 · APPLY</p>
+      <h2 class="mono-hd">Request access.</h2>
       <p class="section-body">
-        We review everything and reach out on WhatsApp. If you do not hear from us within
-        48 hours, you are on the waitlist.
+        We read everything and reach out on WhatsApp. No word within 48 hours?
+        You're on the waitlist, hang tight.
       </p>
       <div class="form-wrap">
         <div id="form-area">
@@ -544,7 +525,7 @@
               </div>
               <div class="fg full">
                 <label>Anything else we should know?</label>
-                <textarea id="f-notes" placeholder="Current setup, questions, whatever is relevant."></textarea>
+                <textarea id="f-notes" placeholder="Current setup, questions, whatever's relevant."></textarea>
               </div>
             </div>
             <!-- Honeypot: hidden from real users, bots will fill it -->
@@ -553,23 +534,32 @@
             </div>
             <button type="submit" class="submit-btn" id="submit-btn">Submit application</button>
             <p class="form-note">
-              Your details stay between you and us. We do not share anything.
+              Your details stay between you and us. We don't share anything.
             </p>
           </form>
         </div>
         <div id="success">
-          <div class="success-mark">&#10003;</div>
-          <h3>Application received.</h3>
-          <p>We will be in touch on WhatsApp within 48 hours.<br>If you do not hear from us, you are on the waitlist.</p>
+          <div class="success-mark mono-hd">[ OK ]</div>
+          <h3 class="mono-hd">Application received.</h3>
+          <p>We'll be in touch on WhatsApp within 48 hours.<br>No word? You're on the waitlist.</p>
         </div>
       </div>
     </div>
   </div>
 
+  <div class="hazard"></div>
+
   <!-- Footer -->
   <footer>
-    <div class="foot-logo">The Network, CPT</div>
-    <p class="foot-note">Members only. Application required.</p>
+    <div class="foot-logo">
+      <svg class="brand-mark" width="17" height="17" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true">
+        <path d="M8,20 L30,40 L50,24 L70,40 L92,20 L50,96 Z"/>
+        <path class="cut" d="M58,12 L36,50 L50,50 L42,88 L70,43 L54,43 Z"/>
+      </svg>
+      SMOKE SIGNALS · NETWORK CPT
+    </div>
+    <div class="hit-counter">VISITORS <span class="digits">004217</span></div>
+    <p class="foot-note">Members only. Best viewed on literally anything.</p>
   </footer>
 
   <script>
@@ -650,7 +640,7 @@
 
       const btn = document.getElementById('submit-btn');
       btn.disabled = true;
-      btn.textContent = 'Submitting...';
+      btn.textContent = 'Sending...';
 
       const params = new URLSearchParams({
         submittedAt: new Date().toISOString(),
