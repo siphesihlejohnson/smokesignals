@@ -71,8 +71,7 @@
       font-size: 1rem; font-weight: 700;
       letter-spacing: 0.15em;
     }
-    .brand-mark { flex-shrink: 0; color: var(--ink); }
-    .brand-mark .cut { fill: var(--bg); }
+    .brand-mark { flex-shrink: 0; }
     .nav-tag {
       font-size: 0.72rem;
       color: var(--dim);
@@ -87,8 +86,7 @@
       text-align: center;
       border-bottom: 3px solid var(--line);
     }
-    .hero-mark { width: 116px; height: 116px; margin: 0 auto 18px; display: block; }
-    .hero-word { font-size: 1.3rem; font-weight: 700; letter-spacing: 0.35em; margin-bottom: 26px; }
+    .hero-mark { width: 240px; max-width: 70vw; margin: 0 auto 32px; display: block; }
     h1.mono-hd {
       font-size: clamp(2.8rem, 10vw, 5.2rem);
       line-height: 0.95;
@@ -348,10 +346,7 @@
 
   <nav>
     <div class="nav-logo">
-      <svg class="brand-mark" width="24" height="24" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true">
-        <path d="M8,20 L30,40 L50,24 L70,40 L92,20 L50,96 Z"/>
-        <path class="cut" d="M58,12 L36,50 L50,50 L42,88 L70,43 L54,43 Z"/>
-      </svg>
+      <img class="brand-mark" src="../assets/icon-white.png" width="20" height="24" alt="">
       SMOKE SIGNALS
     </div>
     <div class="nav-tag">Cape Town <span class="blink">_</span></div>
@@ -359,11 +354,7 @@
 
   <!-- Hero -->
   <div class="hero">
-    <svg class="hero-mark" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true">
-      <path d="M8,20 L30,40 L50,24 L70,40 L92,20 L50,96 Z"/>
-      <path class="cut" d="M58,12 L36,50 L50,50 L42,88 L70,43 L54,43 Z"/>
-    </svg>
-    <p class="hero-word">SMOKE SIGNALS</p>
+    <img class="hero-mark" src="../assets/logo-dark.png" alt="Smoke Signals">
     <h1 class="mono-hd">Not a plug.<br><em>A network.</em></h1>
     <p class="hero-body">
       We source it, you sell it, <strong>the margin's yours.</strong> A closed
@@ -552,10 +543,7 @@
   <!-- Footer -->
   <footer>
     <div class="foot-logo">
-      <svg class="brand-mark" width="17" height="17" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true">
-        <path d="M8,20 L30,40 L50,24 L70,40 L92,20 L50,96 Z"/>
-        <path class="cut" d="M58,12 L36,50 L50,50 L42,88 L70,43 L54,43 Z"/>
-      </svg>
+      <img class="brand-mark" src="../assets/icon-white.png" width="14" height="17" alt="">
       SMOKE SIGNALS · NETWORK CPT
     </div>
     <div class="hit-counter">VISITORS <span class="digits">004217</span></div>
