@@ -10,6 +10,7 @@ const CONFIG = {
   MAX_FAILED_ATTEMPTS: 3,
   VERSION: '1.0.0',
   SETUP_CODE: 'SMOKE420NETWORK',
+  DEFAULT_APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxrxxt-0ZkCf4058KXWvCJBYjDt5AnwHhG0fX0Y8_D8nnKcWRkyDdZqVVFkIbT7DAWc/exec',
 
   KEYS: {
     SALES:        'ssignals_sales',

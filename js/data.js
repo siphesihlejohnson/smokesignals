@@ -30,7 +30,7 @@ const Data = (() => {
       currency:          CONFIG.CURRENCY,
       lowStockThreshold: CONFIG.LOW_STOCK_THRESHOLD,
       sessionTimeout:    CONFIG.SESSION_TIMEOUT_MINUTES,
-      appsScriptUrl:     '',
+      appsScriptUrl:     CONFIG.DEFAULT_APPS_SCRIPT_URL,
     }, lsGet(K.SETTINGS) || {});
   }
   function saveSettings(s) { lsSet(K.SETTINGS, s); }
