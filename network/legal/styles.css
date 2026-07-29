@@ -64,7 +64,6 @@ p, li {
 }
 strong { color: var(--ink); }
 ul, ol { padding-left: 22px; margin-bottom: 12px; }
-.placeholder { color: #ff3b3b; }
 
 footer {
   padding: 22px 24px;
