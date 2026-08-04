@@ -48,7 +48,6 @@ const Auth = (() => {
       const salt = genSalt();
       const upgraded = await hashPIN(pin, salt);
       Data.updateStaffMember({ id: staff.id, pinHash: upgraded, pinSalt: salt });
-      Data.syncStaffPIN(Data.getStaffById(staff.id));
     }
     return legacyOk;
   }
@@ -580,7 +579,6 @@ const Auth = (() => {
           const hashed = await hashPIN(buf, salt);
           Data.updateStaffMember({ id: target.id, pinHash: hashed, pinSalt: salt, failedAttempts: 0, lockedUntil: null });
           Data.addAudit(auditAction, auditDetail(target.name), target.id);
-          Data.syncStaffPIN(Data.getStaffById(target.id));
           overlay.remove();
           onSuccess(Data.getStaffById(target.id));
         });
@@ -665,7 +663,6 @@ const Auth = (() => {
       const hashed = await hashPIN(_pinBuffer, salt);
       Data.updateStaffMember({ id: _selectedStaff.id, pinHash: hashed, pinSalt: salt });
       Data.addAudit('PIN_SET', `PIN set for ${_selectedStaff.name}`, _selectedStaff.id);
-      Data.syncStaffPIN(Data.getStaffById(_selectedStaff.id));
 
       const statusEl = document.getElementById(`setup-status-${_selectedStaff.id}`);
       if (statusEl) { statusEl.textContent = 'SET'; statusEl.className = 'setup-admin-status ok'; }
@@ -838,7 +835,6 @@ const Auth = (() => {
                 const s = getSession();
                 Data.updateStaffMember({ id: targetStaffId, pinHash: hashed, pinSalt: salt, failedAttempts: 0, lockedUntil: null });
                 Data.addAudit('PIN_RESET', `PIN reset for ${Data.getStaffById(targetStaffId)?.name}`, s?.staffId);
-                Data.syncStaffPIN(Data.getStaffById(targetStaffId));
                 overlay.remove();
                 resolve(true);
               }

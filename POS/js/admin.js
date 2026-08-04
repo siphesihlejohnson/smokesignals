@@ -136,7 +136,6 @@ const Admin = (() => {
       Data.addStaffMember({ id, name, email, role, pinHash: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null });
       Data.addAudit('STAFF_ADDED', `${name} (${id}) as ${role}`, s?.staffId);
     }
-    Data.syncStaffPIN(Data.getStaffById(id));
     UI.toast(existing ? 'Staff updated' : 'Staff added', 'success');
     cancelStaffForm();
     render(document.getElementById('content'));

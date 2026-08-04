@@ -42,11 +42,16 @@ const Data = (() => {
   function getStaffById(id) { return getStaff().find(s => s.id === id); }
   function updateStaffMember(updated) {
     lsSet(K.STAFF, getStaff().map(s => s.id === updated.id ? { ...s, ...updated } : s));
+    // Every staff change (PIN, name, email, role, active, lockout state) syncs
+    // automatically — callers can't forget to, unlike the old opt-in pattern
+    // that let active/inactive toggles silently stay local-only.
+    syncStaffPIN(getStaffById(updated.id));
   }
   function addStaffMember(member) {
     const arr = getStaff();
     arr.push(member);
     lsSet(K.STAFF, arr);
+    syncStaffPIN(member);
   }
 
   // ─── Sales ───────────────────────────────────────────────────────────────────
@@ -327,7 +332,11 @@ const Data = (() => {
   function syncStaffPIN(member) {
     queueSync({
       action: 'STAFF_PIN_UPDATE',
-      data: { id: member.id, name: member.name, email: member.email || '', role: member.role, pinHash: member.pinHash, pinSalt: member.pinSalt || '', active: member.active },
+      data: {
+        id: member.id, name: member.name, email: member.email || '', role: member.role,
+        pinHash: member.pinHash, pinSalt: member.pinSalt || '', active: member.active,
+        failedAttempts: member.failedAttempts || 0, lockedUntil: member.lockedUntil || '',
+      },
     });
     processQueue();
   }
@@ -357,10 +366,16 @@ const Data = (() => {
         if (ss.email !== undefined) local[idx].email = ss.email;
         if (ss.role)             local[idx].role    = ss.role;
         if (ss.active !== undefined) local[idx].active = ss.active === true || ss.active === 'true';
+        // Lockout state syncs too, so a device can't be used to bypass a
+        // lockout that just happened on a different device.
+        if (ss.failedAttempts !== undefined) local[idx].failedAttempts = Number(ss.failedAttempts) || 0;
+        if (ss.lockedUntil !== undefined) local[idx].lockedUntil = ss.lockedUntil ? Number(ss.lockedUntil) : null;
       } else {
         local.push({ id: ss.id, name: ss.name, email: ss.email || '', role: ss.role, pinHash: ss.pinHash, pinSalt: ss.pinSalt || null,
           active: ss.active === true || ss.active === 'true',
-          failedAttempts: 0, lockedUntil: null, lastLogin: null });
+          failedAttempts: Number(ss.failedAttempts) || 0,
+          lockedUntil: ss.lockedUntil ? Number(ss.lockedUntil) : null,
+          lastLogin: null });
       }
     });
     lsSet(K.STAFF, local);

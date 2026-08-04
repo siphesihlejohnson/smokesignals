@@ -162,6 +162,26 @@ function getOrCreateSheet(ss, name, headers) {
   return sheet;
 }
 
+// Reads the sheet's ACTUAL current header row (not the JS constant) and
+// appends any expected column that's missing, so a sheet created before a
+// field was added gets extended rather than silently misaligned. Never
+// reorders or removes existing columns — new fields always land at the end.
+// Returns the reconciled header list; every read/write should use THIS,
+// never the raw get*Headers() list, so both always agree on column order.
+function ensureHeaders(sheet, expectedHeaders) {
+  const lastCol = sheet.getLastColumn();
+  const current = lastCol > 0
+    ? sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h).trim()).filter(h => h !== '')
+    : [];
+  const missing = expectedHeaders.filter(h => current.indexOf(h) === -1);
+  if (missing.length === 0) return current;
+
+  const merged = current.concat(missing);
+  sheet.getRange(1, 1, 1, merged.length).setValues([merged]);
+  sheet.getRange(1, 1, 1, merged.length).setFontWeight('bold');
+  return merged;
+}
+
 function sheetToObjects(sheet) {
   const rows = sheet.getDataRange().getValues();
   if (rows.length < 2) return [];
@@ -190,7 +210,7 @@ function getInventoryHeaders() {
   return ['id','name','category','unit','price','stock','sold','active','lastUpdated'];
 }
 function getStaffHeaders() {
-  return ['id','name','email','role','pinHash','pinSalt','active'];
+  return ['id','name','email','role','pinHash','pinSalt','active','failedAttempts','lockedUntil'];
 }
 function getCustomerHeaders() {
   return ['phone','name','notes','firstPurchase','lastPurchase','totalSpent','visits','favProduct','addedBy','lastUpdated'];
@@ -203,9 +223,9 @@ function getSummaryHeaders() {
 
 function updateSaleRow(ss, data) {
   const sheet = getOrCreateSheet(ss, SHEET_NAME_SALES, getSalesHeaders());
-  const rowNum = findRowByColumn(sheet, 0, data.id);
+  const headers = ensureHeaders(sheet, getSalesHeaders());
+  const rowNum = findRowByColumn(sheet, headers.indexOf('id'), data.id);
   if (rowNum < 0) return;
-  const headers = getSalesHeaders();
   headers.forEach((h, i) => {
     if (data[h] !== undefined) sheet.getRange(rowNum, i + 1).setValue(sanitizeCell(data[h]));
   });
@@ -213,7 +233,7 @@ function updateSaleRow(ss, data) {
 
 function appendSale(ss, data) {
   const sheet = getOrCreateSheet(ss, SHEET_NAME_SALES, getSalesHeaders());
-  const headers = getSalesHeaders();
+  const headers = ensureHeaders(sheet, getSalesHeaders());
   const row = headers.map(h => sanitizeCell(data[h] !== undefined ? data[h] : ''));
   sheet.appendRow(row);
 }
@@ -222,11 +242,11 @@ function appendSale(ss, data) {
 
 function upsertInventory(ss, data) {
   const sheet = getOrCreateSheet(ss, SHEET_NAME_INVENTORY, getInventoryHeaders());
-  const headers = getInventoryHeaders();
+  const headers = ensureHeaders(sheet, getInventoryHeaders());
 
   // Find by id first, then by name
-  let rowNum = findRowByColumn(sheet, 0, data.id);
-  if (rowNum < 0) rowNum = findRowByColumn(sheet, 1, data.name);
+  let rowNum = findRowByColumn(sheet, headers.indexOf('id'), data.id);
+  if (rowNum < 0) rowNum = findRowByColumn(sheet, headers.indexOf('name'), data.name);
 
   const row = headers.map(h => sanitizeCell(data[h] !== undefined ? data[h] : ''));
   if (rowNum > 0) {
@@ -238,12 +258,12 @@ function upsertInventory(ss, data) {
 
 function processRestock(ss, data) {
   const sheet = getOrCreateSheet(ss, SHEET_NAME_INVENTORY, getInventoryHeaders());
+  const headers = ensureHeaders(sheet, getInventoryHeaders());
 
-  let rowNum = findRowByColumn(sheet, 0, data.productId);
-  if (rowNum < 0) rowNum = findRowByColumn(sheet, 1, data.productName);
+  let rowNum = findRowByColumn(sheet, headers.indexOf('id'), data.productId);
+  if (rowNum < 0) rowNum = findRowByColumn(sheet, headers.indexOf('name'), data.productName);
   if (rowNum < 0) return;
 
-  const headers = getInventoryHeaders();
   const stockCol = headers.indexOf('stock') + 1;
   const soldCol  = headers.indexOf('sold') + 1;
   const updCol   = headers.indexOf('lastUpdated') + 1;
@@ -257,8 +277,8 @@ function processRestock(ss, data) {
 
 function upsertStaff(ss, data) {
   const sheet = getOrCreateSheet(ss, SHEET_NAME_STAFF, getStaffHeaders());
-  const headers = getStaffHeaders();
-  const rowNum = findRowByColumn(sheet, 0, data.id);
+  const headers = ensureHeaders(sheet, getStaffHeaders());
+  const rowNum = findRowByColumn(sheet, headers.indexOf('id'), data.id);
   const row = headers.map(h => sanitizeCell(data[h] !== undefined ? data[h] : ''));
   if (rowNum > 0) {
     sheet.getRange(rowNum, 1, 1, row.length).setValues([row]);
@@ -306,8 +326,8 @@ function verifyLoginCode(data) {
 
 function upsertCustomer(ss, data) {
   const sheet = getOrCreateSheet(ss, SHEET_NAME_CUSTOMERS, getCustomerHeaders());
-  const headers = getCustomerHeaders();
-  const rowNum = findRowByColumn(sheet, 0, data.phone);
+  const headers = ensureHeaders(sheet, getCustomerHeaders());
+  const rowNum = findRowByColumn(sheet, headers.indexOf('phone'), data.phone);
   const row = headers.map(h => sanitizeCell(data[h] !== undefined ? data[h] : ''));
 
   if (rowNum > 0) {
@@ -319,7 +339,8 @@ function upsertCustomer(ss, data) {
 
 function deleteCustomerRow(ss, phone) {
   const sheet = getOrCreateSheet(ss, SHEET_NAME_CUSTOMERS, getCustomerHeaders());
-  const rowNum = findRowByColumn(sheet, 0, phone);
+  const headers = ensureHeaders(sheet, getCustomerHeaders());
+  const rowNum = findRowByColumn(sheet, headers.indexOf('phone'), phone);
   if (rowNum > 0) sheet.deleteRow(rowNum);
 }
 
