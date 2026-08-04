@@ -58,7 +58,9 @@ function doGet(e) {
     // see README's security notes.
     try {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
-      const staff = sheetToObjects(getOrCreateSheet(ss, SHEET_NAME_STAFF, getStaffHeaders()));
+      const sheet = getOrCreateSheet(ss, SHEET_NAME_STAFF, getStaffHeaders());
+      ensureHeaders(sheet, getStaffHeaders());
+      const staff = sheetToObjects(sheet);
       return respond({ staff });
     } catch (err) {
       return respond({ error: err.message }, 500);
@@ -295,7 +297,9 @@ function upsertStaff(ss, data) {
 function requestLoginCode(ss, data) {
   const staffId = data && data.staffId;
   if (!staffId) return;
-  const staff = sheetToObjects(getOrCreateSheet(ss, SHEET_NAME_STAFF, getStaffHeaders()));
+  const sheet = getOrCreateSheet(ss, SHEET_NAME_STAFF, getStaffHeaders());
+  ensureHeaders(sheet, getStaffHeaders()); // self-heal a stale header row before reading
+  const staff = sheetToObjects(sheet);
   const member = staff.filter(function (s) { return String(s.id) === String(staffId); })[0];
   if (!member || !member.email) return; // silently no-op — caller always gets a generic "ok"
 

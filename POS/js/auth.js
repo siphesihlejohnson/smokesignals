@@ -424,16 +424,25 @@ const Auth = (() => {
     return `${visible}${'*'.repeat(Math.max(1, parts[0].length - 2))}@${parts[1]}`;
   }
 
+  // Returns true only if the server actually accepted the request. A plain
+  // fetch() doesn't throw on a 5xx — MailApp failures, a misaligned Staff
+  // sheet, etc. — so without checking resp.ok the UI would silently move on
+  // to "enter your code" even though no email was ever sent.
   async function _requestLoginCode(staffId) {
     const settings = Data.getSettings();
-    if (!settings.appsScriptUrl) return;
+    if (!settings.appsScriptUrl) return false;
     try {
-      await fetch(settings.appsScriptUrl, {
+      const resp = await fetch(settings.appsScriptUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({ action: 'REQUEST_LOGIN_CODE', data: { staffId } }),
       });
-    } catch { /* handled as "code never arrives" — user can retry/resend */ }
+      if (!resp.ok) return false;
+      const data = await resp.json();
+      return !data.error;
+    } catch {
+      return false; // network/offline — code never arrives, user can retry/resend
+    }
   }
 
   async function _verifyLoginCode(staffId, code) {
@@ -486,7 +495,13 @@ const Auth = (() => {
       const btn = overlay.querySelector('#evp-send');
       btn.disabled = true;
       btn.textContent = 'SENDING...';
-      await _requestLoginCode(target.id);
+      const sent = await _requestLoginCode(target.id);
+      if (!sent) {
+        btn.disabled = false;
+        btn.textContent = 'SEND CODE';
+        UI.toast('Could not send the code — check your connection and try again', 'error');
+        return;
+      }
       renderCodeStep();
     });
 
@@ -508,8 +523,8 @@ const Auth = (() => {
       box.querySelector('#evp-code').focus();
       box.querySelector('#evp-resend').addEventListener('click', async (e) => {
         e.preventDefault();
-        await _requestLoginCode(target.id);
-        UI.toast('Code re-sent', 'info');
+        const sent = await _requestLoginCode(target.id);
+        UI.toast(sent ? 'Code re-sent' : 'Could not resend the code — try again shortly', sent ? 'info' : 'error');
       });
       const doVerify = async () => {
         const code = box.querySelector('#evp-code').value.trim();
