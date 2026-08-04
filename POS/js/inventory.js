@@ -77,29 +77,29 @@ const Inventory = (() => {
     area.innerHTML = UI.panel(isEdit ? `EDIT: ${UI.esc(p.name)}` : 'ADD PRODUCT', `
       <form id="prod-form" class="form-grid">
         <div class="form-group">
-          <label>PRODUCT NAME *</label>
+          <label for="pf-name">PRODUCT NAME *</label>
           <input type="text" id="pf-name" value="${UI.esc(p.name||'')}" required>
         </div>
         <div class="form-group">
-          <label>CATEGORY</label>
+          <label for="pf-category">CATEGORY</label>
           <input type="text" id="pf-category" value="${UI.esc(p.category||'')}" list="cat-list" placeholder="Prerolls, Flower, Edibles...">
           <datalist id="cat-list">
             ${[...new Set(Data.getProducts().map(x=>x.category))].filter(Boolean).map(c=>`<option value="${UI.esc(c)}">`).join('')}
           </datalist>
         </div>
         <div class="form-group">
-          <label>UNIT TYPE</label>
+          <label for="pf-unit">UNIT TYPE</label>
           <select id="pf-unit">
             <option value="each" ${(p.unit||'each')==='each'?'selected':''}>Each</option>
             <option value="gram" ${p.unit==='gram'?'selected':''}>Gram</option>
           </select>
         </div>
         <div class="form-group">
-          <label>PRICE (${Data.getSettings().currency||'R'})</label>
+          <label for="pf-price">PRICE (${Data.getSettings().currency||'R'})</label>
           <input type="number" id="pf-price" value="${p.price||''}" min="0" step="0.01" required>
         </div>
         <div class="form-group">
-          <label>${isEdit ? 'ADJUST STOCK BY' : 'OPENING STOCK'}</label>
+          <label for="pf-stock">${isEdit ? 'ADJUST STOCK BY' : 'OPENING STOCK'}</label>
           <input type="number" id="pf-stock" value="${isEdit ? 0 : (p.stock||0)}" step="0.1">
         </div>
         <div class="form-actions">
@@ -175,22 +175,22 @@ const Inventory = (() => {
     area.innerHTML = UI.panel('RESTOCK', `
       <form id="restock-form" class="form-grid">
         <div class="form-group">
-          <label>PRODUCT *</label>
+          <label for="rs-product">PRODUCT *</label>
           <select id="rs-product">
             <option value="">-- SELECT --</option>
             ${products.map(p => `<option value="${p.id}" ${p.id===preselect?'selected':''}>${UI.esc(p.name)} (${p.stock} in stock)</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
-          <label>QTY RECEIVED *</label>
+          <label for="rs-qty">QTY RECEIVED *</label>
           <input type="number" id="rs-qty" min="1" step="1" placeholder="0">
         </div>
         <div class="form-group">
-          <label>SUPPLIER</label>
+          <label for="rs-supplier">SUPPLIER</label>
           <input type="text" id="rs-supplier" placeholder="Supplier name">
         </div>
         <div class="form-group">
-          <label>DATE</label>
+          <label for="rs-date">DATE</label>
           <input type="date" id="rs-date" value="${new Date().toISOString().split('T')[0]}">
         </div>
         <div class="form-actions">

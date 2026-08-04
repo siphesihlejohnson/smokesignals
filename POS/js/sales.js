@@ -7,7 +7,6 @@ const Sales = (() => {
   function render(container) {
     _payMethod = 'CASH';
     _selectedProduct = null;
-    const products = Data.getActiveProducts();
     const s = Auth.getSession();
 
     const customers = Data.getCustomers().sort((a,b) => (a.name||'').localeCompare(b.name||''));
@@ -18,7 +17,7 @@ const Sales = (() => {
           <div class="sale-form">
             <div class="form-row">
               <div class="form-group flex-2">
-                <label>CUSTOMER</label>
+                <label for="s-cust-select">CUSTOMER</label>
                 <div class="cust-select-row">
                   <select id="s-cust-select">
                     <option value="">-- SELECT EXISTING CUSTOMER --</option>
@@ -30,11 +29,11 @@ const Sales = (() => {
             </div>
             <div class="form-row" id="new-cust-row" style="display:none">
               <div class="form-group">
-                <label>PHONE *</label>
+                <label for="s-phone">PHONE *</label>
                 <input type="tel" id="s-phone" maxlength="10" placeholder="0821234567" autocomplete="off">
               </div>
               <div class="form-group">
-                <label>NAME *</label>
+                <label for="s-name">NAME *</label>
                 <input type="text" id="s-name" placeholder="Customer name" autocomplete="off">
               </div>
             </div>
@@ -43,28 +42,26 @@ const Sales = (() => {
             </div>
             <div class="form-row">
               <div class="form-group flex-2">
-                <label>PRODUCT</label>
-                <select id="s-product">
-                  <option value="">-- SELECT PRODUCT --</option>
-                  ${products.map(p => `<option value="${p.id}">${UI.esc(p.name)} (${Data.getSettings().currency||'R'}${p.price} per ${p.unit}, ${p.stock} in stock)</option>`).join('')}
-                </select>
-              </div>
-              <div class="form-group">
-                <label>UNIT</label>
-                <input type="text" id="s-unit" readonly placeholder="">
+                <label for="s-product-search">PRODUCT</label>
+                <input type="text" id="s-product-search" placeholder="Search products..." autocomplete="off">
               </div>
             </div>
+            <div class="product-grid" id="product-grid"></div>
             <div class="form-row">
               <div class="form-group">
-                <label>QTY</label>
+                <label for="s-qty">QTY</label>
                 <input type="number" id="s-qty" min="0.1" step="0.1" value="1">
               </div>
               <div class="form-group">
-                <label>PRICE / UNIT</label>
+                <label for="s-unit">UNIT</label>
+                <input type="text" id="s-unit" readonly placeholder="">
+              </div>
+              <div class="form-group">
+                <label for="s-price">PRICE / UNIT</label>
                 <input type="number" id="s-price" min="0" step="0.01">
               </div>
               <div class="form-group">
-                <label>TOTAL</label>
+                <label for="s-total">TOTAL</label>
                 <input type="text" id="s-total" readonly placeholder="R0">
               </div>
             </div>
@@ -90,7 +87,7 @@ const Sales = (() => {
 
     // Bind events
     document.getElementById('s-cust-select').addEventListener('change', onCustomerSelect);
-    document.getElementById('s-product').addEventListener('change', onProductChange);
+    document.getElementById('s-product-search').addEventListener('input', renderProductGrid);
     document.getElementById('s-qty').addEventListener('input', updateTotal);
     document.getElementById('s-price').addEventListener('input', updateTotal);
     document.getElementById('btn-cash').addEventListener('click', () => setPayment('CASH'));
@@ -101,15 +98,53 @@ const Sales = (() => {
 
     document.addEventListener('keydown', _enterHandler);
 
+    renderProductGrid();
     renderOwnSales();
   }
 
   function _enterHandler(e) {
-    if (e.key === 'Enter' && App.currentTab === 'sale') {
-      const active = document.activeElement;
-      if (active && (active.id === 'btn-confirm-sale' || active.tagName === 'BUTTON')) return;
-      confirmSale();
-    }
+    if (e.key !== 'Enter' || App.currentTab !== 'sale') return;
+    const active = document.activeElement;
+    // Only submit from the "I'm done" fields — not while picking a customer,
+    // typing a new-customer's details, or filtering the product grid.
+    const allow = active && (active.id === 's-qty' || active.id === 's-price' || active === document.body);
+    if (allow) confirmSale();
+  }
+
+  function renderProductGrid() {
+    const grid = document.getElementById('product-grid');
+    if (!grid) return;
+    const term = (document.getElementById('s-product-search')?.value || '').toLowerCase().trim();
+    const threshold = Data.getSettings().lowStockThreshold || CONFIG.LOW_STOCK_THRESHOLD;
+    const currency = Data.getSettings().currency || 'R';
+    const products = Data.getActiveProducts().filter(p => !term || p.name.toLowerCase().includes(term));
+
+    grid.innerHTML = products.length ? products.map(p => `
+      <button type="button" class="product-tile${_selectedProduct?.id === p.id ? ' selected' : ''}" data-id="${p.id}">
+        <span class="tile-name">${UI.esc(p.name)}</span>
+        <span class="tile-price">${currency}${p.price} / ${p.unit}</span>
+        <span class="tile-stock">${UI.statusBadge(p.stock, threshold)} ${p.stock} left</span>
+      </button>
+    `).join('') : `<div class="no-data">No products match "${UI.esc(term)}"</div>`;
+
+    grid.querySelectorAll('.product-tile').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const product = Data.getProductById(btn.dataset.id);
+        if (product) selectProduct(product);
+      });
+    });
+  }
+
+  function selectProduct(product) {
+    _selectedProduct = product;
+    document.getElementById('s-unit').value = product.unit;
+    document.getElementById('s-price').value = product.price;
+    document.getElementById('s-qty').value = '1';
+    renderProductGrid();
+    updateTotal();
+    const qtyInput = document.getElementById('s-qty');
+    qtyInput.focus();
+    qtyInput.select();
   }
 
   function onCustomerSelect() {
@@ -151,20 +186,6 @@ const Sales = (() => {
     }
   }
 
-  function onProductChange() {
-    const id = document.getElementById('s-product').value;
-    _selectedProduct = Data.getProductById(id);
-    if (_selectedProduct) {
-      document.getElementById('s-unit').value = _selectedProduct.unit;
-      document.getElementById('s-price').value = _selectedProduct.price;
-      document.getElementById('s-qty').value = '1';
-    } else {
-      document.getElementById('s-unit').value = '';
-      document.getElementById('s-price').value = '';
-    }
-    updateTotal();
-  }
-
   function updateTotal() {
     const qty = parseFloat(document.getElementById('s-qty').value) || 0;
     const price = parseFloat(document.getElementById('s-price').value) || 0;
@@ -193,7 +214,7 @@ const Sales = (() => {
       name  = (document.getElementById('s-name')?.value || '').trim();
     }
 
-    const prodId = document.getElementById('s-product').value;
+    const prodId = _selectedProduct?.id;
     const qty    = parseFloat(document.getElementById('s-qty').value);
     const price  = parseFloat(document.getElementById('s-price').value);
 
@@ -206,8 +227,8 @@ const Sales = (() => {
     const product = Data.getProductById(prodId);
     if (!product) { UI.toast('Product not found', 'error'); return; }
 
-    // Warn if stock would go negative
-    if (product.unit === 'each' && qty > product.stock) {
+    // Warn if stock would go negative (any unit, not just 'each')
+    if (qty > product.stock) {
       const go = await UI.confirm(`Stock is ${product.stock} but selling ${qty}. Continue?`);
       if (!go) return;
     }
@@ -260,13 +281,15 @@ const Sales = (() => {
     if (name)  name.value  = '';
     const newRow = document.getElementById('new-cust-row');
     if (newRow) newRow.style.display = 'none';
-    document.getElementById('s-product').value = '';
+    const search = document.getElementById('s-product-search');
+    if (search) search.value = '';
     document.getElementById('s-unit').value = '';
     document.getElementById('s-qty').value = '1';
     document.getElementById('s-price').value = '';
     document.getElementById('s-total').value = '';
     document.getElementById('cust-info-box').style.display = 'none';
     _selectedProduct = null;
+    renderProductGrid();
     _payMethod = 'CASH';
     document.getElementById('btn-cash').classList.add('active');
     document.getElementById('btn-eft').classList.remove('active');
@@ -306,7 +329,7 @@ const SalesLog = (() => {
         ${UI.panel('SALES LOG', `
           <div class="filter-row">
             <div class="form-group">
-              <label>MONTH</label>
+              <label for="log-month">MONTH</label>
               <select id="log-month">
                 <option value="">ALL</option>
                 ${months.map(m => `<option value="${m}">${m}</option>`).join('')}
@@ -314,21 +337,21 @@ const SalesLog = (() => {
             </div>
             ${isAdmin ? `
             <div class="form-group">
-              <label>STAFF</label>
+              <label for="log-staff">STAFF</label>
               <select id="log-staff">
                 <option value="">ALL</option>
                 ${staff.map(sf => `<option value="${sf.name}">${sf.name}</option>`).join('')}
               </select>
             </div>` : ''}
             <div class="form-group">
-              <label>PRODUCT</label>
+              <label for="log-product">PRODUCT</label>
               <select id="log-product">
                 <option value="">ALL</option>
                 ${products.map(p => `<option value="${UI.esc(p)}">${UI.esc(p)}</option>`).join('')}
               </select>
             </div>
             <div class="form-group">
-              <label>PAYMENT</label>
+              <label for="log-pay">PAYMENT</label>
               <select id="log-pay">
                 <option value="">ALL</option>
                 <option value="CASH">CASH</option>
@@ -336,7 +359,7 @@ const SalesLog = (() => {
               </select>
             </div>
             <div class="form-group">
-              <label>SEARCH</label>
+              <label for="log-search">SEARCH</label>
               <input type="text" id="log-search" placeholder="Name or phone">
             </div>
             ${isAdmin ? `<button class="btn btn-sm" id="log-export">EXPORT CSV</button>` : ''}

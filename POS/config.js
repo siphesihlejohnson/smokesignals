@@ -26,6 +26,7 @@ const CONFIG = {
     LAST_SYNC:    'ssignals_lastSync',
     SYNC_HISTORY: 'ssignals_syncHistory',
     ACTIVE_TAB:   'ssignals_activeTab',
+    THEME:        'ssignals_theme',
   },
 
   SEED_STAFF: [

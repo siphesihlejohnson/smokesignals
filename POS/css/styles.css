@@ -8,6 +8,7 @@
   --text-dim:  #9a9a9a;
   --amber:     #ddaa00;
   --red:       #dd2200;
+  --red-text:  #ff8888;
   --blue:      #0088dd;
   --border:    #ffffff;
   --border-dim:#333333;
@@ -15,6 +16,21 @@
   --nav-h:     36px;
   --bot-h:     28px;
   --fn-h:      44px;
+}
+
+:root[data-theme="light"] {
+  --bg:        #ffffff;
+  --surface:   #f0f0f0;
+  --accent:    #000000;
+  --accent-hi: #222222;
+  --text:      #000000;
+  --text-dim:  #555555;
+  --amber:     #8a6a00;
+  --red:       #c41e00;
+  --red-text:  #c41e00;
+  --blue:      #0067ad;
+  --border:    #000000;
+  --border-dim:#cccccc;
 }
 
 /* ── Reset ──────────────────────────────────────────────────────────────────── */
@@ -64,7 +80,10 @@ a { color: var(--accent); }
   margin-bottom: 12px;
   background-repeat: no-repeat;
   background-size: contain;
-  background-image: url("../assets/icon-white.png");
+  background-image: url("../../assets/icon-white.png");
+}
+:root[data-theme="light"] .login-brand::before {
+  background-image: url("../../assets/icon-black.png");
 }
 .brand-name {
   font-size: 2rem; font-weight: 700;
@@ -204,14 +223,24 @@ a { color: var(--accent); }
   content: '';
   width: 12px; height: 14px; flex-shrink: 0;
   background-repeat: no-repeat; background-size: contain;
-  background-image: url("../assets/icon-white.png");
+  background-image: url("../../assets/icon-white.png");
+}
+:root[data-theme="light"] .top-brand::before {
+  background-image: url("../../assets/icon-black.png");
 }
 .top-branch { color: var(--text-dim); }
 .top-staff  { color: var(--accent); font-weight: 600; }
 .top-date, .top-time { color: var(--text-dim); }
 .top-sep    { color: var(--border-dim); }
+.btn-theme {
+  margin-left: auto; padding: 4px 8px;
+  background: transparent; border: 1px solid var(--border-dim);
+  color: var(--text-dim); cursor: pointer; font-size: 0.7rem;
+  flex-shrink: 0; line-height: 1;
+}
+.btn-theme:hover { border-color: var(--accent); color: var(--accent); }
 .btn-logout {
-  margin-left: auto; padding: 4px 10px;
+  padding: 4px 10px;
   background: transparent; border: 1px solid var(--red);
   color: var(--red); cursor: pointer; font-size: 0.7rem;
   text-transform: uppercase; letter-spacing: 0.05em;
@@ -364,7 +393,7 @@ tbody td {
   color: var(--text);
   vertical-align: middle;
 }
-tbody tr:hover td { background: rgba(255,255,255,0.05); }
+tbody tr:hover td { background: rgba(128,128,128,0.12); }
 .no-data {
   color: var(--text-dim); font-size: 0.8rem;
   padding: 16px 0; text-align: center;
@@ -406,6 +435,12 @@ select, textarea {
 input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--accent);
+}
+button:focus-visible, .tab-btn:focus-visible, .fn-btn:focus-visible,
+.staff-btn:focus-visible, .num-btn:focus-visible, .product-tile:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
 }
 input[readonly] {
   border-color: transparent;
@@ -464,6 +499,24 @@ textarea { resize: vertical; min-height: 60px; }
    SALE FORM
 ══════════════════════════════════════════════════════════════════════════════ */
 .sale-form .form-row { margin-bottom: 8px; }
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.product-tile {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+  background: var(--bg); border: 1px solid var(--border-dim);
+  color: var(--text); padding: 10px;
+  cursor: pointer; text-align: left;
+  font-family: inherit; transition: all 0.1s;
+}
+.product-tile:hover { border-color: var(--accent); }
+.product-tile.selected { border-color: var(--accent); border-width: 2px; background: var(--surface); }
+.tile-name { font-size: 0.8rem; font-weight: 700; }
+.tile-price { font-size: 0.7rem; color: var(--text-dim); }
+.tile-stock { font-size: 0.65rem; color: var(--text-dim); display: flex; align-items: center; gap: 4px; }
 .pay-toggle { display: flex; gap: 0; }
 .pay-btn {
   flex: 1; padding: 10px;
@@ -606,7 +659,7 @@ textarea { resize: vertical; min-height: 60px; }
 }
 .toast.show { opacity: 1; transform: translateX(0); }
 .toast.toast-success { border-left-color: var(--accent); }
-.toast.toast-error   { border-left-color: var(--red); border-color: var(--red); color: #ff8888; }
+.toast.toast-error   { border-left-color: var(--red); border-color: var(--red); color: var(--red-text); }
 .toast.toast-warn    { border-left-color: var(--amber); border-color: var(--amber); }
 .toast.toast-info    { border-left-color: var(--blue); }
 

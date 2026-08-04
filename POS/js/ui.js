@@ -30,6 +30,7 @@ const UI = (() => {
   ];
 
   function init() {
+    applyTheme();
     document.addEventListener('keydown', (e) => {
       if (!Auth.isLoggedIn()) return;
       const n = parseInt(e.key.replace('F', ''), 10);
@@ -39,6 +40,19 @@ const UI = (() => {
       }
     });
     startClock();
+  }
+
+  // ─── Theme ────────────────────────────────────────────────────────────────────
+  function applyTheme() {
+    const theme = Data.lsGet(CONFIG.KEYS.THEME) || 'dark';
+    document.documentElement.dataset.theme = theme;
+  }
+
+  function toggleTheme() {
+    const next = (Data.lsGet(CONFIG.KEYS.THEME) || 'dark') === 'dark' ? 'light' : 'dark';
+    Data.lsSet(CONFIG.KEYS.THEME, next);
+    applyTheme();
+    renderTopBar();
   }
 
   function showApp() {
@@ -113,6 +127,7 @@ const UI = (() => {
   function renderTopBar() {
     const s = Auth.getSession();
     const settings = Data.getSettings();
+    const isLight = document.documentElement.dataset.theme === 'light';
     document.getElementById('top-bar').innerHTML = `
       <span class="top-brand">${settings.appName || 'SMOKE SIGNALS'}</span>
       <span class="top-sep">|</span>
@@ -123,6 +138,7 @@ const UI = (() => {
       <span id="top-date" class="top-date"></span>
       <span class="top-sep">|</span>
       <span id="top-time" class="top-time"></span>
+      <button class="btn-theme" onclick="UI.toggleTheme()" aria-label="Switch to ${isLight ? 'dark' : 'light'} theme">${isLight ? '☾ DARK' : '☀ LIGHT'}</button>
       <button class="btn btn-sm btn-logout" onclick="Auth.logout()">LOGOUT</button>
     `;
     updateClock();
@@ -205,11 +221,19 @@ const UI = (() => {
   function modal(html, onClose) {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
-    overlay.innerHTML = `<div class="modal-box">${html}</div>`;
+    overlay.innerHTML = `<div class="modal-box" role="dialog" aria-modal="true">${html}</div>`;
     document.body.appendChild(overlay);
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) { overlay.remove(); if (onClose) onClose(); }
     });
+    const box = overlay.querySelector('.modal-box');
+    const focusable = box.querySelector('button, input, [tabindex]');
+    if (focusable) {
+      focusable.focus();
+    } else {
+      box.setAttribute('tabindex', '-1');
+      box.focus();
+    }
     return overlay;
   }
 
@@ -286,6 +310,7 @@ const UI = (() => {
     renderTopBar, renderTabNav, renderFnBar, updateBottomBar,
     startClock, toast, modal, confirm, prompt,
     fmtCurrency, statusBadge, panel, table, esc,
+    applyTheme, toggleTheme,
   };
 })();
 

@@ -6,6 +6,8 @@ const Auth = (() => {
   let _watchdogInterval = null;
   let _setupStep = 0;
   let _setupNewPin = '';
+  let _warningOverlay = null;
+  const SESSION_WARNING_MS = 2 * 60 * 1000;
 
   // ─── SHA-256 ──────────────────────────────────────────────────────────────────
   async function hashPIN(pin) {
@@ -52,18 +54,60 @@ const Auth = (() => {
     if (s) Data.addAudit('LOGOUT', `${s.staffName} logged out`, s.staffId);
     Data.lsSet(CONFIG.KEYS.SESSION, null);
     if (_watchdogInterval) { clearInterval(_watchdogInterval); _watchdogInterval = null; }
+    if (_warningOverlay) { _warningOverlay.remove(); _warningOverlay = null; }
     showLoginScreen();
   }
   function startWatchdog() {
     if (_watchdogInterval) clearInterval(_watchdogInterval);
-    _watchdogInterval = setInterval(() => {
-      if (isLoggedIn()) {
-        extendSession();
-      }
-    }, 60000);
+    // Ticks every second to check real time-to-expiry and surface a warning —
+    // it must NOT extend the session itself, or idle timeout never fires.
+    _watchdogInterval = setInterval(_checkSessionExpiry, 1000);
     document.addEventListener('click', extendSession, { passive: true });
     document.addEventListener('keydown', extendSession, { passive: true });
     document.addEventListener('touchstart', extendSession, { passive: true });
+  }
+
+  function _checkSessionExpiry() {
+    const s = getSession();
+    if (!s) return;
+    const remaining = s.expiresAt - Date.now();
+
+    if (remaining <= 0) {
+      logout();
+      return;
+    }
+
+    if (remaining <= SESSION_WARNING_MS) {
+      _showSessionWarning(remaining);
+    } else if (_warningOverlay) {
+      _warningOverlay.remove();
+      _warningOverlay = null;
+    }
+  }
+
+  function _showSessionWarning(remaining) {
+    const mins = Math.floor(remaining / 60000);
+    const secs = Math.floor((remaining % 60000) / 1000);
+    const label = `${mins}:${String(secs).padStart(2, '0')}`;
+
+    if (_warningOverlay) {
+      const timeEl = document.getElementById('session-warning-time');
+      if (timeEl) timeEl.textContent = label;
+      return;
+    }
+
+    _warningOverlay = UI.modal(`
+      <div class="modal-title">[ SESSION ENDING ]</div>
+      <div class="modal-body">You've been idle a while. Logging out in <strong id="session-warning-time">${label}</strong>.</div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="session-stay-btn">STAY LOGGED IN</button>
+      </div>
+    `, () => { _warningOverlay = null; });
+
+    _warningOverlay.querySelector('#session-stay-btn').addEventListener('click', () => {
+      extendSession();
+      if (_warningOverlay) { _warningOverlay.remove(); _warningOverlay = null; }
+    });
   }
 
   // ─── First Run ────────────────────────────────────────────────────────────────

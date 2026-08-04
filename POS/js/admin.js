@@ -81,15 +81,15 @@ const Admin = (() => {
     area.innerHTML = UI.panel(isEdit ? `EDIT: ${UI.esc(m.name)}` : 'ADD STAFF MEMBER', `
       <form id="staff-form" class="form-grid">
         <div class="form-group">
-          <label>STAFF ID (no spaces) *</label>
+          <label for="sf-id">STAFF ID (no spaces) *</label>
           <input type="text" id="sf-id" value="${UI.esc(m.id||'')}" ${isEdit?'readonly':''} placeholder="e.g. STAFF4" style="text-transform:uppercase">
         </div>
         <div class="form-group">
-          <label>DISPLAY NAME *</label>
+          <label for="sf-name">DISPLAY NAME *</label>
           <input type="text" id="sf-name" value="${UI.esc(m.name||'')}" required>
         </div>
         <div class="form-group">
-          <label>ROLE</label>
+          <label for="sf-role">ROLE</label>
           <select id="sf-role">
             <option value="staff" ${(m.role||'staff')==='staff'?'selected':''}>Staff</option>
             <option value="admin" ${m.role==='admin'?'selected':''}>Admin</option>
@@ -170,22 +170,22 @@ const Admin = (() => {
     area.innerHTML = UI.panel('AUDIT LOG (READ ONLY)', `
       <div class="filter-row">
         <div class="form-group">
-          <label>STAFF</label>
+          <label for="audit-staff">STAFF</label>
           <select id="audit-staff">
             <option value="">ALL</option>
             ${staff.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
-          <label>FROM</label>
+          <label for="audit-from">FROM</label>
           <input type="date" id="audit-from">
         </div>
         <div class="form-group">
-          <label>TO</label>
+          <label for="audit-to">TO</label>
           <input type="date" id="audit-to">
         </div>
         <div class="form-group">
-          <label>ACTION</label>
+          <label for="audit-action">ACTION</label>
           <input type="text" id="audit-action" placeholder="e.g. SALE">
         </div>
       </div>
@@ -248,7 +248,7 @@ const Admin = (() => {
             </table>
           </div>
           <div class="form-group" style="margin-top:12px">
-            <label>SUPPLIER</label>
+            <label for="bulk-supplier">SUPPLIER</label>
             <input type="text" id="bulk-supplier" placeholder="Supplier name">
           </div>
           <div class="form-actions">
@@ -377,27 +377,27 @@ const Admin = (() => {
     area.innerHTML = UI.panel('SYSTEM SETTINGS', `
       <form id="settings-form" class="form-grid">
         <div class="form-group">
-          <label>BUSINESS NAME</label>
+          <label for="cfg-name">BUSINESS NAME</label>
           <input type="text" id="cfg-name" value="${UI.esc(settings.appName)}">
         </div>
         <div class="form-group">
-          <label>BRANCH NAME</label>
+          <label for="cfg-branch">BRANCH NAME</label>
           <input type="text" id="cfg-branch" value="${UI.esc(settings.branch)}">
         </div>
         <div class="form-group">
-          <label>CURRENCY SYMBOL</label>
+          <label for="cfg-currency">CURRENCY SYMBOL</label>
           <input type="text" id="cfg-currency" value="${UI.esc(settings.currency)}" maxlength="3">
         </div>
         <div class="form-group">
-          <label>LOW STOCK THRESHOLD</label>
+          <label for="cfg-threshold">LOW STOCK THRESHOLD</label>
           <input type="number" id="cfg-threshold" value="${settings.lowStockThreshold}" min="1">
         </div>
         <div class="form-group">
-          <label>SESSION TIMEOUT (minutes)</label>
+          <label for="cfg-timeout">SESSION TIMEOUT (minutes)</label>
           <input type="number" id="cfg-timeout" value="${settings.sessionTimeout}" min="5" max="480">
         </div>
         <div class="form-group">
-          <label>GOOGLE APPS SCRIPT URL</label>
+          <label for="cfg-url">GOOGLE APPS SCRIPT URL</label>
           <input type="url" id="cfg-url" value="${UI.esc(settings.appsScriptUrl||'')}" placeholder="https://script.google.com/macros/s/...">
         </div>
         <div class="form-actions">
@@ -505,7 +505,7 @@ const Setup = (() => {
           </div>
 
           <div class="form-group" style="margin-top:20px">
-            <label>APPS SCRIPT WEB APP URL</label>
+            <label for="setup-url">APPS SCRIPT WEB APP URL</label>
             <div class="input-with-btn">
               <input type="url" id="setup-url" value="${UI.esc(settings.appsScriptUrl||'')}" placeholder="https://script.google.com/macros/s/...">
               <button class="btn btn-primary btn-sm" id="btn-save-url">SAVE</button>

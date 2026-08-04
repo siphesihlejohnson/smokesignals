@@ -2,6 +2,8 @@
 
 A sales capture and inventory management system for a small cannabis dispensary. Built with vanilla HTML/CSS/JS, uses Google Sheets as a database via Apps Script, and is hosted on GitHub Pages.
 
+This is the staff-facing POS, served from `/POS/`. The repo root (`index.html`, `terms/`, `privacy/`, `refunds/`, `legal/`) is a separate public marketing/membership site with its own backend in `APPSSCRIPT_waitlist.js`. This README covers the POS only.
+
 ---
 
 ## What it does
@@ -42,7 +44,7 @@ A sales capture and inventory management system for a small cannabis dispensary.
    `https://script.google.com/macros/s/AKfy.../exec`
 
 ### Enter the URL in the app
-1. Open Smoke420 in a browser
+1. Open the POS in a browser (`/POS/`)
 2. Log in as admin → go to the **SETUP** tab (F8)
 3. Paste the URL into the **Apps Script URL** field and click **SAVE**
 4. Click **TEST CONNECTION** to verify
@@ -74,8 +76,10 @@ git push -u origin main
 #    → Repository Settings → Pages → Source: Deploy from branch
 #    → Branch: main / root → Save
 
-# Your app will be live at:
+# The marketing site will be live at:
 # https://YOUR_USERNAME.github.io/smoke420/
+# The POS will be live at:
+# https://YOUR_USERNAME.github.io/smoke420/POS/
 ```
 
 ---
@@ -109,19 +113,23 @@ The first time you open the app, a **Setup Wizard** appears automatically becaus
 
 ```
 smoke420/
-├── index.html        # Single-page app shell
-├── config.js         # Constants, seed staff and products
-├── css/styles.css    # Terminal POS design
-├── js/
-│   ├── data.js       # localStorage + Google Sheets sync
-│   ├── auth.js       # PIN login, sessions, setup wizard
-│   ├── ui.js         # Navigation, toasts, modals, clock
-│   ├── sales.js      # Sale capture + Sales Log
-│   ├── inventory.js  # Stock management
-│   ├── customers.js  # Customer database
-│   ├── reports.js    # Revenue charts and stats
-│   └── admin.js      # Admin panel + Setup tab
-├── APPSSCRIPT.js     # Paste into Google Apps Script
+├── index.html, terms/, privacy/, refunds/, legal/   # Public marketing/membership site
+├── APPSSCRIPT_waitlist.js                           # Backend for the site above
+├── assets/                                          # Shared branding (logos, favicons)
+├── POS/                                             # The POS app covered by this README
+│   ├── index.html     # Single-page app shell
+│   ├── config.js      # Constants, seed staff and products
+│   ├── css/styles.css # Terminal POS design
+│   ├── js/
+│   │   ├── data.js       # localStorage + Google Sheets sync
+│   │   ├── auth.js       # PIN login, sessions, setup wizard
+│   │   ├── ui.js         # Navigation, toasts, modals, clock
+│   │   ├── sales.js      # Sale capture + Sales Log
+│   │   ├── inventory.js  # Stock management
+│   │   ├── customers.js  # Customer database
+│   │   ├── reports.js    # Revenue charts and stats
+│   │   └── admin.js      # Admin panel + Setup tab
+│   └── APPSSCRIPT.js  # Paste into Google Apps Script
 ├── USERMANUAL.md     # Plain English staff guide
 └── README.md         # This file
 ```

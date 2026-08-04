@@ -39,7 +39,7 @@ function doGet(e) {
     return respond({ status: 'ok' });
   }
 
-  // The site's application form submits here as a GET (see network/index.html).
+  // The site's application form submits here as a GET (see index.html).
   if (p.fname && p.whatsapp) {
     appendWaitlistEntry({
       submittedAt: p.submittedAt,

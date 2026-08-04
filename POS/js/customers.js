@@ -13,7 +13,7 @@ const Customers = (() => {
         ${UI.panel('CUSTOMERS', `
           <div class="filter-row">
             <div class="form-group">
-              <label>SEARCH</label>
+              <label for="cust-search">SEARCH</label>
               <input type="text" id="cust-search" placeholder="Name or phone...">
             </div>
             <button class="btn btn-primary btn-sm" id="btn-add-cust">+ ADD CUSTOMER</button>
@@ -72,15 +72,15 @@ const Customers = (() => {
     area.innerHTML = UI.panel('ADD CUSTOMER', `
       <form id="cust-form" class="form-grid">
         <div class="form-group">
-          <label>NAME *</label>
+          <label for="cf-name">NAME *</label>
           <input type="text" id="cf-name" required>
         </div>
         <div class="form-group">
-          <label>PHONE *</label>
+          <label for="cf-phone">PHONE *</label>
           <input type="tel" id="cf-phone" maxlength="10" required>
         </div>
         <div class="form-group">
-          <label>NOTES</label>
+          <label for="cf-notes">NOTES</label>
           <textarea id="cf-notes" rows="2"></textarea>
         </div>
         <div class="form-actions">
@@ -101,15 +101,15 @@ const Customers = (() => {
     area.innerHTML = UI.panel(`EDIT: ${UI.esc(customer.name)}`, `
       <form id="cust-edit-form" class="form-grid">
         <div class="form-group">
-          <label>NAME *</label>
+          <label for="ef-name">NAME *</label>
           <input type="text" id="ef-name" value="${UI.esc(customer.name)}" required>
         </div>
         <div class="form-group">
-          <label>PHONE *</label>
+          <label for="ef-phone">PHONE *</label>
           <input type="tel" id="ef-phone" value="${UI.esc(customer.phone)}" maxlength="10" required>
         </div>
         <div class="form-group">
-          <label>NOTES</label>
+          <label for="ef-notes">NOTES</label>
           <textarea id="ef-notes" rows="2">${UI.esc(customer.notes||'')}</textarea>
         </div>
         <div class="cust-stats">
