@@ -272,6 +272,21 @@ const UI = (() => {
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────────────────
+  // Disables `btn` and swaps its label for the duration of an async action, so
+  // a slow sync/export can't be double-triggered and the user sees it's working.
+  async function withBusy(btn, busyLabel, fn) {
+    if (!btn) return fn();
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = busyLabel;
+    try {
+      return await fn();
+    } finally {
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+  }
+
   function fmtCurrency(n) {
     const s = Auth.getSession();
     const settings = Data.getSettings();
@@ -309,7 +324,7 @@ const UI = (() => {
     init, showApp, showLogin, navigate, handleFnKey,
     renderTopBar, renderTabNav, renderFnBar, updateBottomBar,
     startClock, toast, modal, confirm, prompt,
-    fmtCurrency, statusBadge, panel, table, esc,
+    fmtCurrency, statusBadge, panel, table, esc, withBusy,
     applyTheme, toggleTheme,
   };
 })();

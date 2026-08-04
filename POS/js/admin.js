@@ -46,32 +46,45 @@ const Admin = (() => {
 
   // ─── Staff Management ────────────────────────────────────────────────────────
   function renderStaff(area) {
-    const staff = Data.getStaff();
     area.innerHTML = `
       ${UI.panel('STAFF MANAGEMENT', `
         <div class="inv-actions">
           <button class="btn btn-primary btn-sm" onclick="Admin.showAddStaffForm()">+ ADD STAFF</button>
+          <input type="text" id="staff-search" placeholder="Search by name, ID, or role..." style="flex:1;min-width:200px">
         </div>
-        ${UI.table(
-          ['ID','NAME','ROLE','STATUS','LAST LOGIN','ACTIONS'],
-          staff.map(s => [
-            s.id,
-            UI.esc(s.name),
-            `<span class="badge ${s.role==='admin'?'badge-ok':'badge-dim'}">${s.role.toUpperCase()}</span>`,
-            s.active
-              ? `<span class="badge badge-ok">ACTIVE</span>`
-              : `<span class="badge badge-out">INACTIVE</span>`,
-            s.lastLogin ? Data.fmtDate(s.lastLogin) : 'Never',
-            `<button class="btn btn-xs" onclick="Admin.editStaff('${s.id}')">EDIT</button>
-             <button class="btn btn-xs" onclick="Admin.doResetPIN('${s.id}')">RESET PIN</button>
-             <button class="btn btn-xs ${s.active?'btn-warn':'btn-ok'}" onclick="Admin.toggleStaff('${s.id}')">
-               ${s.active ? 'DEACTIVATE' : 'ACTIVATE'}
-             </button>`,
-          ])
-        )}
+        <div id="staff-table-area"></div>
       `)}
       <div id="staff-form-area"></div>
     `;
+    document.getElementById('staff-search').addEventListener('input', renderStaffTable);
+    renderStaffTable();
+  }
+
+  function renderStaffTable() {
+    const tableArea = document.getElementById('staff-table-area');
+    if (!tableArea) return;
+    const q = (document.getElementById('staff-search')?.value || '').trim().toLowerCase();
+    const staff = Data.getStaff().filter(s =>
+      !q || s.id.toLowerCase().includes(q) || s.name.toLowerCase().includes(q) || s.role.toLowerCase().includes(q)
+    );
+    tableArea.innerHTML = UI.table(
+      ['ID','NAME','ROLE','STATUS','LAST LOGIN','ACTIONS'],
+      staff.map(s => [
+        s.id,
+        UI.esc(s.name),
+        `<span class="badge ${s.role==='admin'?'badge-ok':'badge-dim'}">${s.role.toUpperCase()}</span>`,
+        s.active
+          ? `<span class="badge badge-ok">ACTIVE</span>`
+          : `<span class="badge badge-out">INACTIVE</span>`,
+        s.lastLogin ? Data.fmtDate(s.lastLogin) : 'Never',
+        `<button class="btn btn-xs" onclick="Admin.editStaff('${s.id}')">EDIT</button>
+         <button class="btn btn-xs" onclick="Admin.doResetPIN('${s.id}')">RESET PIN</button>
+         <button class="btn btn-xs ${s.active?'btn-warn':'btn-ok'}" onclick="Admin.toggleStaff('${s.id}')">
+           ${s.active ? 'DEACTIVATE' : 'ACTIVATE'}
+         </button>`,
+      ]),
+      'No staff match your search'
+    );
   }
 
   function showAddStaffForm(existing) {
@@ -83,6 +96,7 @@ const Admin = (() => {
         <div class="form-group">
           <label for="sf-id">STAFF ID (no spaces) *</label>
           <input type="text" id="sf-id" value="${UI.esc(m.id||'')}" ${isEdit?'readonly':''} placeholder="e.g. STAFF4" style="text-transform:uppercase">
+          <div class="field-error" id="sf-id-error"></div>
         </div>
         <div class="form-group">
           <label for="sf-name">DISPLAY NAME *</label>
@@ -91,6 +105,7 @@ const Admin = (() => {
         <div class="form-group">
           <label for="sf-email">EMAIL</label>
           <input type="email" id="sf-email" value="${UI.esc(m.email||'')}" placeholder="name@s-signals.com">
+          <div class="field-error" id="sf-email-error"></div>
         </div>
         <div class="form-group">
           <label for="sf-role">ROLE</label>
@@ -115,6 +130,23 @@ const Admin = (() => {
       e.preventDefault();
       saveStaff(existing);
     });
+
+    if (!isEdit) {
+      const idInput = document.getElementById('sf-id');
+      idInput.addEventListener('input', () => {
+        const cleanId = idInput.value.toUpperCase().replace(/\s+/g, '');
+        if (cleanId !== idInput.value) idInput.value = cleanId;
+        const idErr = document.getElementById('sf-id-error');
+        idErr.textContent = cleanId && Data.getStaffById(cleanId) ? 'This ID is already in use' : '';
+      });
+    }
+
+    const emailInput = document.getElementById('sf-email');
+    emailInput.addEventListener('input', () => {
+      const val = emailInput.value.trim();
+      const emailErr = document.getElementById('sf-email-error');
+      emailErr.textContent = (val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) ? 'Not a valid email address' : '';
+    });
   }
 
   function saveStaff(existing) {
@@ -126,6 +158,7 @@ const Admin = (() => {
     if (!id)   { UI.toast('ID required', 'error'); return; }
     if (!name) { UI.toast('Name required', 'error'); return; }
     if (!existing && Data.getStaffById(id)) { UI.toast('ID already exists', 'error'); return; }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { UI.toast('Enter a valid email address', 'error'); return; }
 
     const s = Auth.getSession();
     if (existing) {
@@ -195,8 +228,10 @@ const Admin = (() => {
         </div>
       </div>
       <div id="audit-table"></div>
+      <div class="count-note" id="audit-count"></div>
     `);
 
+    const AUDIT_PAGE_LIMIT = 200;
     function applyAuditFilters() {
       const sf  = document.getElementById('audit-staff').value;
       const from = document.getElementById('audit-from').value;
@@ -211,7 +246,7 @@ const Admin = (() => {
 
       document.getElementById('audit-table').innerHTML = UI.table(
         ['TIMESTAMP','STAFF','ACTION','DETAILS'],
-        filtered.slice(0, 200).map(e => [
+        filtered.slice(0, AUDIT_PAGE_LIMIT).map(e => [
           Data.fmtDate(e.timestamp) + ' ' + Data.fmtTime(e.timestamp),
           e.staff,
           `<span class="badge badge-dim">${e.action}</span>`,
@@ -219,6 +254,9 @@ const Admin = (() => {
         ]),
         'No audit entries match filter'
       );
+      document.getElementById('audit-count').textContent = filtered.length > AUDIT_PAGE_LIMIT
+        ? `Showing most recent ${AUDIT_PAGE_LIMIT} of ${filtered.length} matching entries — narrow the filters to see more`
+        : `${filtered.length} matching entr${filtered.length === 1 ? 'y' : 'ies'}`;
     }
 
     ['audit-staff','audit-from','audit-to','audit-action'].forEach(id => {
@@ -236,12 +274,13 @@ const Admin = (() => {
     area.innerHTML = `
       ${UI.panel('BULK RESTOCK', `
         <form id="bulk-restock-form">
+          <input type="text" id="restock-search" placeholder="Search products..." style="margin-bottom:10px">
           <div class="table-wrap">
             <table>
               <thead><tr><th>PRODUCT</th><th>IN STOCK</th><th>STATUS</th><th>ADD QTY</th></tr></thead>
               <tbody>
                 ${products.filter(p=>p.active).map(p => `
-                  <tr>
+                  <tr data-product-name="${UI.esc(p.name.toLowerCase())}">
                     <td>${UI.esc(p.name)}</td>
                     <td>${p.stock}</td>
                     <td>${UI.statusBadge(p.stock, threshold)}</td>
@@ -271,6 +310,13 @@ const Admin = (() => {
       ))}
     `;
 
+    document.getElementById('restock-search').addEventListener('input', (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      document.querySelectorAll('#bulk-restock-form tr[data-product-name]').forEach(row => {
+        row.style.display = !q || row.dataset.productName.includes(q) ? '' : 'none';
+      });
+    });
+
     document.getElementById('bulk-restock-form').addEventListener('submit', async e => {
       e.preventDefault();
       const supplier = document.getElementById('bulk-supplier').value.trim() || 'Unknown';
@@ -295,13 +341,15 @@ const Admin = (() => {
   // ─── Data Management ─────────────────────────────────────────────────────────
   function renderData(area) {
     const history = Data.getSyncHistory();
+    const pending = Data.getQueue().length;
     area.innerHTML = `
       ${UI.panel('DATA MANAGEMENT', `
         <div class="data-actions">
-          <button class="btn btn-primary" onclick="Admin.exportAll()">EXPORT ALL DATA (CSV)</button>
-          <button class="btn" onclick="Admin.manualSync()">MANUAL SYNC TO SHEETS</button>
-          <button class="btn btn-danger" onclick="Admin.clearData()">CLEAR ALL DATA</button>
+          <button class="btn btn-primary" onclick="Admin.exportAll(this)">EXPORT ALL DATA (CSV)</button>
+          <button class="btn" onclick="Admin.manualSync(this)">MANUAL SYNC TO SHEETS</button>
+          <button class="btn btn-danger" onclick="Admin.clearData(this)">CLEAR ALL DATA</button>
         </div>
+        <div class="count-note">${pending === 0 ? 'All changes synced' : `${pending} change(s) waiting to sync`}</div>
       `)}
       ${UI.panel('SYNC HISTORY (LAST 10)', UI.table(
         ['TIMESTAMP','STATUS','RECORDS SENT'],
@@ -315,65 +363,73 @@ const Admin = (() => {
     `;
   }
 
-  async function exportAll() {
-    const s = Auth.getSession();
-    Data.addAudit('EXPORT_ALL', 'Full data export', s?.staffId);
+  async function exportAll(btn) {
+    await UI.withBusy(btn, 'EXPORTING...', async () => {
+      const s = Auth.getSession();
+      Data.addAudit('EXPORT_ALL', 'Full data export', s?.staffId);
 
-    const exportData = (name, data, header) => {
-      const a = document.createElement('a');
-      a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(header + '\n' + data);
-      a.download = `ssignals_${name}_${Data.fmtDate(new Date()).replace(/\//g,'-')}.csv`;
-      a.click();
-    };
+      const exportData = (name, data, header) => {
+        const a = document.createElement('a');
+        a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(header + '\n' + data);
+        a.download = `ssignals_${name}_${Data.fmtDate(new Date()).replace(/\//g,'-')}.csv`;
+        a.click();
+      };
+      const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
-    const sales = Data.getSales();
-    exportData('sales',
-      sales.map(s=>[s.date,s.time,s.product,s.category,s.unit,s.qty,s.amount,s.payment,`"${s.customer||''}"`,s.phone,s.staff,s.id].join(',')).join('\n'),
-      'Date,Time,Product,Category,Unit,Qty,Amount,Payment,Customer,Phone,Staff,SaleID'
-    );
+      try {
+        const sales = Data.getSales();
+        exportData('sales',
+          sales.map(s=>[s.date,s.time,s.product,s.category,s.unit,s.qty,s.amount,s.payment,`"${s.customer||''}"`,s.phone,s.staff,s.id].join(',')).join('\n'),
+          'Date,Time,Product,Category,Unit,Qty,Amount,Payment,Customer,Phone,Staff,SaleID'
+        );
+        await wait(400);
 
-    setTimeout(() => {
-      const prods = Data.getProducts();
-      exportData('inventory',
-        prods.map(p=>[`"${p.name}"`,p.category,p.unit,p.price,p.stock,p.sold,p.active].join(',')).join('\n'),
-        'Product,Category,Unit,Price,Stock,Sold,Active'
-      );
-    }, 500);
+        const prods = Data.getProducts();
+        exportData('inventory',
+          prods.map(p=>[`"${p.name}"`,p.category,p.unit,p.price,p.stock,p.sold,p.active].join(',')).join('\n'),
+          'Product,Category,Unit,Price,Stock,Sold,Active'
+        );
+        await wait(400);
 
-    setTimeout(() => {
-      const custs = Data.getCustomers();
-      exportData('customers',
-        custs.map(c=>[c.phone,`"${c.name||''}"`,c.totalSpent,c.visits,`"${c.favProduct||''}"`,c.lastPurchase?Data.fmtDate(c.lastPurchase):''].join(',')).join('\n'),
-        'Phone,Name,TotalSpent,Visits,FavProduct,LastPurchase'
-      );
-    }, 1000);
-
-    UI.toast('Exporting all data...', 'info', 4000);
+        const custs = Data.getCustomers();
+        exportData('customers',
+          custs.map(c=>[c.phone,`"${c.name||''}"`,c.totalSpent,c.visits,`"${c.favProduct||''}"`,c.lastPurchase?Data.fmtDate(c.lastPurchase):''].join(',')).join('\n'),
+          'Phone,Name,TotalSpent,Visits,FavProduct,LastPurchase'
+        );
+        UI.toast('Export complete — 3 CSV files downloaded', 'success');
+      } catch (e) {
+        UI.toast(`Export failed: ${e.message}`, 'error');
+      }
+    });
   }
 
-  async function manualSync() {
-    UI.toast('Syncing to Google Sheets...', 'info');
-    await Data.fetchFromSheets();
-    await Data.processQueue();
-    UI.toast('Sync complete', 'success');
-    render(document.getElementById('content'));
+  async function manualSync(btn) {
+    await UI.withBusy(btn, 'SYNCING...', async () => {
+      UI.toast('Syncing to Google Sheets...', 'info');
+      await Data.fetchFromSheets();
+      await Data.processQueue();
+      UI.toast('Sync complete', 'success');
+      render(document.getElementById('content'));
+    });
   }
 
-  async function clearData() {
+  async function clearData(btn) {
     const ok1 = await UI.confirm('This will delete ALL local data (sales, customers, inventory). Are you sure?');
     if (!ok1) return;
     const ok2 = await UI.confirm('FINAL WARNING: This cannot be undone. Type YES by clicking confirm.');
     if (!ok2) return;
-    const s = Auth.getSession();
-    Data.addAudit('DATA_CLEARED', 'All local data cleared', s?.staffId);
-    Object.values(CONFIG.KEYS).forEach(k => {
-      if (k !== CONFIG.KEYS.SESSION && k !== CONFIG.KEYS.SETTINGS) {
-        localStorage.removeItem(k);
-      }
+    await UI.withBusy(btn, 'CLEARING...', async () => {
+      const s = Auth.getSession();
+      Data.addAudit('DATA_CLEARED', 'All local data cleared', s?.staffId);
+      Object.values(CONFIG.KEYS).forEach(k => {
+        if (k !== CONFIG.KEYS.SESSION && k !== CONFIG.KEYS.SETTINGS) {
+          localStorage.removeItem(k);
+        }
+      });
+      Data.init();
+      UI.toast('Data cleared and re-seeded', 'info');
+      render(document.getElementById('content'));
     });
-    Data.init();
-    UI.toast('Data cleared and re-seeded', 'info');
-    render(document.getElementById('content'));
   }
 
   // ─── Settings ────────────────────────────────────────────────────────────────
@@ -407,7 +463,10 @@ const Admin = (() => {
         </div>
         <div class="form-group">
           <label for="cfg-apikey">SYNC API KEY</label>
-          <input type="text" id="cfg-apikey" value="${UI.esc(settings.apiKey||'')}" placeholder="Must match the Apps Script's API_KEY property">
+          <div class="input-with-btn">
+            <input type="password" id="cfg-apikey" value="${UI.esc(settings.apiKey||'')}" placeholder="Must match the Apps Script's API_KEY property">
+            <button type="button" class="btn btn-sm" id="btn-toggle-apikey">SHOW</button>
+          </div>
           <div class="form-note">Only needed if the Apps Script has an API_KEY script property set — required on every device once it's enabled, or syncing will fail.</div>
         </div>
         <div class="form-actions">
@@ -422,7 +481,14 @@ const Admin = (() => {
       saveSettings();
     });
 
-    document.getElementById('btn-test-conn').addEventListener('click', testConnection);
+    document.getElementById('btn-test-conn').addEventListener('click', () => testConnection(document.getElementById('btn-test-conn')));
+
+    document.getElementById('btn-toggle-apikey').addEventListener('click', (e) => {
+      const input = document.getElementById('cfg-apikey');
+      const showing = input.type === 'text';
+      input.type = showing ? 'password' : 'text';
+      e.target.textContent = showing ? 'SHOW' : 'HIDE';
+    });
   }
 
   function saveSettings() {
@@ -442,20 +508,21 @@ const Admin = (() => {
     UI.renderTopBar();
   }
 
-  async function testConnection() {
+  async function testConnection(btn) {
     const url = document.getElementById('cfg-url').value.trim();
     if (!url) { UI.toast('Enter the Apps Script URL first', 'error'); return; }
-    UI.toast('Testing connection...', 'info');
-    try {
-      const resp = await fetch(`${url}?action=ping`);
-      if (resp.ok) {
-        UI.toast('Connection successful!', 'success');
-      } else {
-        UI.toast(`Connection failed: HTTP ${resp.status}`, 'error');
+    await UI.withBusy(btn, 'TESTING...', async () => {
+      try {
+        const resp = await fetch(`${url}?action=ping`);
+        if (resp.ok) {
+          UI.toast('Connection successful!', 'success');
+        } else {
+          UI.toast(`Connection failed: HTTP ${resp.status}`, 'error');
+        }
+      } catch (e) {
+        UI.toast(`Connection failed: ${e.message}`, 'error');
       }
-    } catch (e) {
-      UI.toast(`Connection failed: ${e.message}`, 'error');
-    }
+    });
   }
 
   return {

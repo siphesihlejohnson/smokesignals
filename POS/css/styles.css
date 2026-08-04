@@ -423,7 +423,7 @@ label {
   margin-bottom: 4px;
 }
 input[type="text"], input[type="tel"], input[type="number"],
-input[type="date"], input[type="url"], input[type="email"],
+input[type="date"], input[type="url"], input[type="email"], input[type="password"],
 select, textarea {
   background: var(--bg);
   border: 1px solid var(--border-dim);
@@ -456,8 +456,12 @@ textarea { resize: vertical; min-height: 60px; }
   margin-top: 4px;
 }
 .form-note { font-size: 0.7rem; color: var(--text-dim); margin-top: 4px; }
+.field-error { font-size: 0.7rem; color: var(--red); margin-top: 4px; }
+.count-note { font-size: 0.7rem; color: var(--text-dim); margin: 8px 0 0; }
 .input-with-btn { display: flex; gap: 0; }
 .input-with-btn input { flex: 1; }
+.search-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 12px; }
+.search-row .form-group { min-width: 200px; }
 .w-full { width: 100%; }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -487,6 +491,9 @@ textarea { resize: vertical; min-height: 60px; }
 .btn-warn { border-color: var(--amber); color: var(--amber); }
 .btn-warn:hover { background: var(--amber); color: var(--bg); }
 .btn-ok { border-color: var(--accent); color: var(--accent); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:disabled:hover { background: transparent; color: var(--accent); }
+.btn-primary:disabled:hover { background: var(--accent); color: var(--bg); }
 .btn-sm { padding: 4px 10px; font-size: 0.7rem; }
 .btn-xs { padding: 2px 7px; font-size: 0.65rem; }
 .btn-large { padding: 12px 24px; font-size: 0.85rem; }
