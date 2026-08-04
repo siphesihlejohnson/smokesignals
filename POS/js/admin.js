@@ -53,11 +53,10 @@ const Admin = (() => {
           <button class="btn btn-primary btn-sm" onclick="Admin.showAddStaffForm()">+ ADD STAFF</button>
         </div>
         ${UI.table(
-          ['ID','NAME','EMAIL','ROLE','STATUS','LAST LOGIN','ACTIONS'],
+          ['ID','NAME','ROLE','STATUS','LAST LOGIN','ACTIONS'],
           staff.map(s => [
             s.id,
             UI.esc(s.name),
-            UI.esc(s.email || '—'),
             `<span class="badge ${s.role==='admin'?'badge-ok':'badge-dim'}">${s.role.toUpperCase()}</span>`,
             s.active
               ? `<span class="badge badge-ok">ACTIVE</span>`
