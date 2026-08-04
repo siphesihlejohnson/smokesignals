@@ -53,10 +53,11 @@ const Admin = (() => {
           <button class="btn btn-primary btn-sm" onclick="Admin.showAddStaffForm()">+ ADD STAFF</button>
         </div>
         ${UI.table(
-          ['ID','NAME','ROLE','STATUS','LAST LOGIN','ACTIONS'],
+          ['ID','NAME','EMAIL','ROLE','STATUS','LAST LOGIN','ACTIONS'],
           staff.map(s => [
             s.id,
             UI.esc(s.name),
+            UI.esc(s.email || '—'),
             `<span class="badge ${s.role==='admin'?'badge-ok':'badge-dim'}">${s.role.toUpperCase()}</span>`,
             s.active
               ? `<span class="badge badge-ok">ACTIVE</span>`
@@ -89,6 +90,10 @@ const Admin = (() => {
           <input type="text" id="sf-name" value="${UI.esc(m.name||'')}" required>
         </div>
         <div class="form-group">
+          <label for="sf-email">EMAIL</label>
+          <input type="email" id="sf-email" value="${UI.esc(m.email||'')}" placeholder="name@s-signals.com">
+        </div>
+        <div class="form-group">
           <label for="sf-role">ROLE</label>
           <select id="sf-role">
             <option value="staff" ${(m.role||'staff')==='staff'?'selected':''}>Staff</option>
@@ -97,8 +102,8 @@ const Admin = (() => {
         </div>
         ${!isEdit ? `
         <div class="form-group">
-          <label>PIN will be set by the staff member on first login</label>
-          <div class="form-note">Leave PIN as "not set". The staff member will be prompted to set their own PIN on first login.</div>
+          <label>PIN is set by the staff member on first login</label>
+          <div class="form-note">Leave PIN as "not set". At the login screen, they'll select their name and set their own PIN.</div>
         </div>` : ''}
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">${isEdit ? 'SAVE' : 'ADD STAFF'}</button>
@@ -114,9 +119,10 @@ const Admin = (() => {
   }
 
   function saveStaff(existing) {
-    const id   = document.getElementById('sf-id').value.trim().toUpperCase().replace(/\s+/g,'');
-    const name = document.getElementById('sf-name').value.trim();
-    const role = document.getElementById('sf-role').value;
+    const id    = document.getElementById('sf-id').value.trim().toUpperCase().replace(/\s+/g,'');
+    const name  = document.getElementById('sf-name').value.trim();
+    const email = document.getElementById('sf-email').value.trim();
+    const role  = document.getElementById('sf-role').value;
 
     if (!id)   { UI.toast('ID required', 'error'); return; }
     if (!name) { UI.toast('Name required', 'error'); return; }
@@ -124,12 +130,13 @@ const Admin = (() => {
 
     const s = Auth.getSession();
     if (existing) {
-      Data.updateStaffMember({ ...existing, name, role });
+      Data.updateStaffMember({ ...existing, name, email, role });
       Data.addAudit('STAFF_EDITED', `${existing.name} → ${name} (${role})`, s?.staffId);
     } else {
-      Data.addStaffMember({ id, name, role, pinHash: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null });
+      Data.addStaffMember({ id, name, email, role, pinHash: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null });
       Data.addAudit('STAFF_ADDED', `${name} (${id}) as ${role}`, s?.staffId);
     }
+    Data.syncStaffPIN(Data.getStaffById(id));
     UI.toast(existing ? 'Staff updated' : 'Staff added', 'success');
     cancelStaffForm();
     render(document.getElementById('content'));

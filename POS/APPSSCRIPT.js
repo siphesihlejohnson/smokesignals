@@ -95,6 +95,16 @@ function doPost(e) {
       return respond({ valid });
     }
 
+    // Per-person email one-time codes for PIN setup/reset — no API key needed,
+    // these ARE the auth mechanism for that specific staff member's account.
+    if (action === 'REQUEST_LOGIN_CODE') {
+      requestLoginCode(ss, data);
+      return respond({ status: 'ok' }); // always ok — don't reveal whether the id/email matched
+    }
+    if (action === 'VERIFY_LOGIN_CODE') {
+      return respond({ valid: verifyLoginCode(data) });
+    }
+
     if (!hasValidApiKey(body)) {
       return respond({ error: 'unauthorized' }, 401);
     }
@@ -180,7 +190,7 @@ function getInventoryHeaders() {
   return ['id','name','category','unit','price','stock','sold','active','lastUpdated'];
 }
 function getStaffHeaders() {
-  return ['id','name','role','pinHash','pinSalt','active'];
+  return ['id','name','email','role','pinHash','pinSalt','active'];
 }
 function getCustomerHeaders() {
   return ['phone','name','notes','firstPurchase','lastPurchase','totalSpent','visits','favProduct','addedBy','lastUpdated'];
@@ -255,6 +265,41 @@ function upsertStaff(ss, data) {
   } else {
     sheet.appendRow(row);
   }
+}
+
+// ── Email login codes (PIN setup/reset) ────────────────────────────────────────
+// A 6-digit code, cached server-side (never exposed to any client) against the
+// staff id for 10 minutes, single use. Ties "set/reset my PIN" to proof of
+// access to that specific person's own inbox instead of a shared master code.
+
+function requestLoginCode(ss, data) {
+  const staffId = data && data.staffId;
+  if (!staffId) return;
+  const staff = sheetToObjects(getOrCreateSheet(ss, SHEET_NAME_STAFF, getStaffHeaders()));
+  const member = staff.filter(function (s) { return String(s.id) === String(staffId); })[0];
+  if (!member || !member.email) return; // silently no-op — caller always gets a generic "ok"
+
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  CacheService.getScriptCache().put('LOGIN_CODE_' + staffId, code, 600); // 10 minutes
+
+  MailApp.sendEmail({
+    to: member.email,
+    subject: 'Your Smoke Signals POS code',
+    body: 'Your verification code is ' + code + '.\n\n' +
+          'It expires in 10 minutes and can only be used once. ' +
+          'If you did not request this, you can ignore this email.',
+  });
+}
+
+function verifyLoginCode(data) {
+  const staffId = data && data.staffId;
+  const code = data && data.code;
+  if (!staffId || !code) return false;
+  const cache = CacheService.getScriptCache();
+  const cached = cache.get('LOGIN_CODE_' + staffId);
+  const valid = !!cached && cached === String(code);
+  if (valid) cache.remove('LOGIN_CODE_' + staffId); // single use
+  return valid;
 }
 
 // ── Customers ─────────────────────────────────────────────────────────────────

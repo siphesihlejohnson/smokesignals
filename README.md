@@ -55,16 +55,18 @@ The app will now sync all sales, inventory changes, and customer records to your
 
 ## 2. Secure the Apps Script backend
 
-The Web App is deployed "Anyone can access" (required — the static POS has no server of its own), so `doGet`/`doPost` can't assume a caller is legitimate. Two Script Properties close the two most important gaps. **Do this now, not later** — until you set `SETUP_CODE`, first-run setup and "Forgot PIN" resets will always report the code as incorrect.
+The Web App is deployed "Anyone can access" (required — the static POS has no server of its own), so `doGet`/`doPost` can't assume a caller is legitimate. Two Script Properties close the two most important gaps. **Do this now, not later** — until you set `SETUP_CODE`, true first-run device setup (a device with zero staff PINs anywhere) will always report the code as incorrect.
 
 In the Apps Script editor: **Project Settings → Script Properties → Add script property**.
 
 | Property | Required? | What it does |
 |---|---|---|
-| `SETUP_CODE` | **Yes** | Replaces the old hardcoded master code. Verified server-side now, instead of being shipped in public JS. Pick a new value — the previous `SMOKE420NETWORK` was committed in this repo's history, so treat it as burned. |
+| `SETUP_CODE` | **Yes** | Gates the true first-run wizard only (bootstrapping the very first admin PIN on a device that has no staff PINs at all). Verified server-side, never shipped in client JS. Pick a new value — the old `SMOKE420NETWORK` was committed in this repo's history, so treat it as burned. |
 | `API_KEY` | Recommended | If set, every write (`SALE`, `PRODUCT_UPDATE`, `CUSTOMER_UPSERT`, `CUSTOMER_DELETE`, `SALE_UPDATE`, `RESTOCK`, `STAFF_PIN_UPDATE`) must include a matching key, or it's rejected. Without it, anyone with the Web App URL can write to your sheet. |
 
 If you set `API_KEY`, enter the same value on **every device** in **Admin → Settings → Sync API Key** — reads still work without it, but syncing writes will silently fail until it's entered.
+
+**"Set up my PIN" and "Forgot PIN" no longer use the master code** — they email a one-time 6-digit code to that staff member's on-file address (Admin → Staff Management → Email) instead, via `MailApp.sendEmail()` from the Google account the script is deployed under. No extra setup needed, but note Gmail's daily send quota (100/day on a free @gmail.com account, 1500/day on Workspace) — fine for a small team, but staff without an email on file will be told to ask an admin to add one or reset their PIN directly from Staff Management.
 
 **Known residual risk:** the `getStaff` endpoint still returns each staff member's `pinHash` (and `pinSalt`) to any caller — this is what lets a brand new device pull PINs down and let staff log in offline without an admin re-entering them. PINs are now salted PBKDF2 (expensive to brute-force even if a hash leaks) rather than raw SHA-256, but this is a deliberate trade-off between that convenience and airtight secrecy, not a fully closed gap. If you'd rather eliminate it entirely, that requires dropping automatic new-device PIN sync.
 

@@ -327,7 +327,7 @@ const Data = (() => {
   function syncStaffPIN(member) {
     queueSync({
       action: 'STAFF_PIN_UPDATE',
-      data: { id: member.id, name: member.name, role: member.role, pinHash: member.pinHash, pinSalt: member.pinSalt || '', active: member.active },
+      data: { id: member.id, name: member.name, email: member.email || '', role: member.role, pinHash: member.pinHash, pinSalt: member.pinSalt || '', active: member.active },
     });
     processQueue();
   }
@@ -353,10 +353,12 @@ const Data = (() => {
         // pinHash and pinSalt are a matched pair — always update together so
         // a device never ends up with one half of an old/new pair mismatched.
         if (ss.pinHash) { local[idx].pinHash = ss.pinHash; local[idx].pinSalt = ss.pinSalt || null; }
+        if (ss.name)              local[idx].name    = ss.name;
+        if (ss.email !== undefined) local[idx].email = ss.email;
         if (ss.role)             local[idx].role    = ss.role;
         if (ss.active !== undefined) local[idx].active = ss.active === true || ss.active === 'true';
       } else {
-        local.push({ id: ss.id, name: ss.name, role: ss.role, pinHash: ss.pinHash, pinSalt: ss.pinSalt || null,
+        local.push({ id: ss.id, name: ss.name, email: ss.email || '', role: ss.role, pinHash: ss.pinHash, pinSalt: ss.pinSalt || null,
           active: ss.active === true || ss.active === 'true',
           failedAttempts: 0, lockedUntil: null, lastLogin: null });
       }

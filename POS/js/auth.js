@@ -217,6 +217,9 @@ const Auth = (() => {
               <button class="num-btn" data-key="${k}">${k}</button>
             `).join('')}
           </div>
+          <div id="login-setup-pin" style="display:none;text-align:center;margin-top:8px;">
+            <button class="btn btn-primary btn-sm" onclick="Auth.showFirstPinSetup()">SET UP MY PIN</button>
+          </div>
           <div id="login-forgot" style="display:none;text-align:center;margin-top:8px;">
             <button class="btn-link" onclick="Auth.showForgotPIN()">Forgot PIN?</button>
           </div>
@@ -252,14 +255,37 @@ const Auth = (() => {
     document.querySelectorAll('.staff-btn').forEach(b => b.classList.toggle('active', b.dataset.id === id));
     setMsg('');
     const forgotEl = document.getElementById('login-forgot');
-    if (forgotEl) forgotEl.style.display = 'block';
+    const setupEl  = document.getElementById('login-setup-pin');
+    if (forgotEl) forgotEl.style.display = 'none';
+    if (setupEl)  setupEl.style.display  = 'none';
 
     if (_selectedStaff && !_selectedStaff.pinHash) {
-      setMsg('PIN not set. Contact admin.', 'warn');
+      setMsg("No PIN set yet — that's you? Set one up below.", 'warn');
+      if (setupEl) setupEl.style.display = 'block';
     } else if (_selectedStaff && _selectedStaff.lockedUntil && Date.now() < _selectedStaff.lockedUntil) {
       const mins = Math.ceil((_selectedStaff.lockedUntil - Date.now()) / 60000);
       setMsg(`LOCKED. Try again in ${mins} min.`, 'error');
+      if (forgotEl) forgotEl.style.display = 'block';
+    } else if (_selectedStaff) {
+      if (forgotEl) forgotEl.style.display = 'block';
     }
+  }
+
+  function showFirstPinSetup() {
+    if (!_selectedStaff || _selectedStaff.pinHash) return;
+    _startEmailVerifiedPin(_selectedStaff, {
+      title: 'SET UP YOUR PIN',
+      auditAction: 'PIN_SET',
+      auditDetail: (name) => `${name} set their own PIN on first login (email-verified)`,
+      onSuccess: (staff) => {
+        document.removeEventListener('keydown', _physicalKeyHandler);
+        _selectedStaff = staff;
+        createSession(staff);
+        startWatchdog();
+        UI.showApp();
+        UI.toast(`Welcome, ${staff.name}!`, 'success');
+      },
+    });
   }
 
   function handleKey(k) {
@@ -392,6 +418,176 @@ const Auth = (() => {
     }
   }
 
+  function _maskEmail(email) {
+    const parts = String(email).split('@');
+    if (parts.length !== 2) return email;
+    const visible = parts[0].slice(0, 2);
+    return `${visible}${'*'.repeat(Math.max(1, parts[0].length - 2))}@${parts[1]}`;
+  }
+
+  async function _requestLoginCode(staffId) {
+    const settings = Data.getSettings();
+    if (!settings.appsScriptUrl) return;
+    try {
+      await fetch(settings.appsScriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'REQUEST_LOGIN_CODE', data: { staffId } }),
+      });
+    } catch { /* handled as "code never arrives" — user can retry/resend */ }
+  }
+
+  async function _verifyLoginCode(staffId, code) {
+    const settings = Data.getSettings();
+    if (!settings.appsScriptUrl) return false;
+    try {
+      const resp = await fetch(settings.appsScriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'VERIFY_LOGIN_CODE', data: { staffId, code } }),
+      });
+      const data = await resp.json();
+      return !!data.valid;
+    } catch {
+      return false;
+    }
+  }
+
+  // Shared by showFirstPinSetup and showForgotPIN: email a one-time code to
+  // the staff member's on-file address, verify it, then let them choose a
+  // PIN. Ties "set/reset my PIN" to proof of access to that specific
+  // person's own inbox, rather than a shared master code or no check at all.
+  function _startEmailVerifiedPin(target, { title, auditAction, auditDetail, onSuccess }) {
+    if (!target.email) {
+      const overlay = UI.modal(`
+        <div class="modal-title">[ ${title} ]</div>
+        <div class="modal-body">No email on file for ${UI.esc(target.name)}. Ask an admin to add one
+          (Admin → Staff Management → Edit), or have an admin set your PIN directly
+          (Admin → Staff Management → Reset PIN).</div>
+        <div class="modal-actions"><button class="btn btn-secondary" id="evp-close">CLOSE</button></div>
+      `);
+      overlay.querySelector('#evp-close').addEventListener('click', () => overlay.remove());
+      return;
+    }
+
+    const masked = _maskEmail(target.email);
+    let pinStep = 1, newPin = '', buf = '';
+
+    const overlay = UI.modal(`
+      <div class="modal-title">[ ${title} — ${UI.esc(target.name)} ]</div>
+      <div class="modal-body">We'll email a 6-digit code to <strong>${UI.esc(masked)}</strong>.</div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="evp-send">SEND CODE</button>
+        <button class="btn btn-secondary" id="evp-cancel">CANCEL</button>
+      </div>
+    `);
+
+    overlay.querySelector('#evp-cancel').addEventListener('click', () => overlay.remove());
+    overlay.querySelector('#evp-send').addEventListener('click', async () => {
+      const btn = overlay.querySelector('#evp-send');
+      btn.disabled = true;
+      btn.textContent = 'SENDING...';
+      await _requestLoginCode(target.id);
+      renderCodeStep();
+    });
+
+    function renderCodeStep() {
+      const box = overlay.querySelector('.modal-box');
+      box.innerHTML = `
+        <div class="modal-title">[ ${title} — ${UI.esc(target.name)} ]</div>
+        <div class="modal-body">Enter the code sent to <strong>${UI.esc(masked)}</strong>. It expires in 10 minutes.</div>
+        <input type="text" id="evp-code" maxlength="6" inputmode="numeric" autocomplete="one-time-code"
+          placeholder="123456" class="w-full" style="text-align:center;letter-spacing:0.3em;font-size:1.2rem;margin-bottom:8px;">
+        <div id="evp-msg" class="login-msg"></div>
+        <div class="modal-actions">
+          <button class="btn btn-primary" id="evp-verify">VERIFY</button>
+          <button class="btn btn-secondary" id="evp-cancel">CANCEL</button>
+        </div>
+        <div style="text-align:center;margin-top:8px;"><button class="btn-link" id="evp-resend">Resend code</button></div>
+      `;
+      box.querySelector('#evp-cancel').addEventListener('click', () => overlay.remove());
+      box.querySelector('#evp-code').focus();
+      box.querySelector('#evp-resend').addEventListener('click', async (e) => {
+        e.preventDefault();
+        await _requestLoginCode(target.id);
+        UI.toast('Code re-sent', 'info');
+      });
+      const doVerify = async () => {
+        const code = box.querySelector('#evp-code').value.trim();
+        const btn = box.querySelector('#evp-verify');
+        btn.disabled = true;
+        const valid = await _verifyLoginCode(target.id, code);
+        btn.disabled = false;
+        if (!valid) {
+          const msg = box.querySelector('#evp-msg');
+          msg.textContent = 'Incorrect or expired code.';
+          msg.className = 'login-msg error';
+          return;
+        }
+        renderPinStep();
+      };
+      box.querySelector('#evp-verify').addEventListener('click', doVerify);
+      box.querySelector('#evp-code').addEventListener('keydown', (e) => { if (e.key === 'Enter') doVerify(); });
+    }
+
+    function renderPinStep() {
+      pinStep = 1; newPin = ''; buf = '';
+      const box = overlay.querySelector('.modal-box');
+      box.innerHTML = `
+        <div class="modal-title">[ SET YOUR PIN — ${UI.esc(target.name)} ]</div>
+        <div class="pin-label" id="evp-pin-label">ENTER PIN</div>
+        <div class="pin-dots" id="evp-dots">
+          <span id="evpd-0">○</span><span id="evpd-1">○</span>
+          <span id="evpd-2">○</span><span id="evpd-3">○</span>
+        </div>
+        <div id="evp-pin-msg" class="login-msg"></div>
+        <div class="numpad">
+          ${[1,2,3,4,5,6,7,8,9,'CLR',0,'DEL'].map(k => `<button class="num-btn" data-k="${k}">${k}</button>`).join('')}
+        </div>
+      `;
+      const updDots = () => {
+        for (let i = 0; i < 4; i++) {
+          const d = box.querySelector(`#evpd-${i}`);
+          if (d) d.textContent = i < buf.length ? '◉' : '○';
+        }
+      };
+      box.querySelectorAll('.num-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const k = btn.dataset.k;
+          if (k === 'CLR') { buf = ''; updDots(); return; }
+          if (k === 'DEL') { buf = buf.slice(0, -1); updDots(); return; }
+          if (buf.length >= 4) return;
+          buf += k;
+          updDots();
+          if (buf.length !== 4) return;
+
+          if (pinStep === 1) {
+            newPin = buf; buf = ''; pinStep = 2;
+            box.querySelector('#evp-pin-label').textContent = 'CONFIRM PIN';
+            updDots();
+            return;
+          }
+          if (buf !== newPin) {
+            box.querySelector('#evp-pin-msg').textContent = 'PINs do not match. Try again.';
+            box.querySelector('#evp-pin-msg').className = 'login-msg error';
+            buf = ''; newPin = ''; pinStep = 1;
+            box.querySelector('#evp-pin-label').textContent = 'ENTER PIN';
+            updDots();
+            return;
+          }
+
+          const salt = genSalt();
+          const hashed = await hashPIN(buf, salt);
+          Data.updateStaffMember({ id: target.id, pinHash: hashed, pinSalt: salt, failedAttempts: 0, lockedUntil: null });
+          Data.addAudit(auditAction, auditDetail(target.name), target.id);
+          Data.syncStaffPIN(Data.getStaffById(target.id));
+          overlay.remove();
+          onSuccess(Data.getStaffById(target.id));
+        });
+      });
+    }
+  }
+
   async function _verifySetupCode() {
     const input = document.getElementById('setup-code-input').value.trim().toUpperCase();
     const btn = document.querySelector('#setup-code-area button');
@@ -501,105 +697,21 @@ const Auth = (() => {
     showLoginScreen();
   }
 
-  // ─── Forgot PIN (pre-login reset via master code) ────────────────────────────
+  // ─── Forgot PIN (pre-login reset via emailed one-time code) ──────────────────
   function showForgotPIN() {
     if (!_selectedStaff) return;
-    const target = _selectedStaff;
-
-    let _fpStep = 1, _fpNewPin = '', _fpBuf = '';
-
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.innerHTML = `
-      <div class="modal-box">
-        <div class="modal-title">[ RESET PIN — ${target.name} ]</div>
-        <div id="fp-code-area">
-          <div class="modal-body">Enter the master setup code to continue.</div>
-          <input type="password" id="fp-code" placeholder="Setup code"
-            style="width:100%;padding:10px;background:#0d1a0d;border:1px solid #1a4a1a;color:#e8f5eb;font-family:monospace;font-size:1rem;outline:none;margin-bottom:8px;">
-          <div id="fp-msg" class="login-msg"></div>
-          <div class="modal-actions">
-            <button class="btn btn-primary" id="fp-verify-btn">VERIFY</button>
-            <button class="btn btn-secondary" id="fp-cancel-btn">CANCEL</button>
-          </div>
-        </div>
-        <div id="fp-pin-area" style="display:none;">
-          <div class="pin-label" id="fp-pin-label">ENTER NEW PIN</div>
-          <div class="pin-dots" id="fp-dots">
-            <span id="fpd-0">○</span><span id="fpd-1">○</span>
-            <span id="fpd-2">○</span><span id="fpd-3">○</span>
-          </div>
-          <div id="fp-pin-msg" class="login-msg"></div>
-          <div class="numpad">
-            ${[1,2,3,4,5,6,7,8,9,'CLR',0,'DEL'].map(k => `
-              <button class="num-btn" data-fpk="${k}">${k}</button>
-            `).join('')}
-          </div>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(overlay);
-
-    function updFpDots() {
-      for (let i = 0; i < 4; i++) {
-        const d = document.getElementById(`fpd-${i}`);
-        if (d) d.textContent = i < _fpBuf.length ? '◉' : '○';
-      }
-    }
-
-    async function advanceFp() {
-      if (_fpStep === 1) {
-        _fpNewPin = _fpBuf; _fpBuf = ''; _fpStep = 2;
-        document.getElementById('fp-pin-label').textContent = 'CONFIRM NEW PIN';
-        updFpDots();
-      } else if (_fpStep === 2) {
-        if (_fpBuf !== _fpNewPin) {
-          document.getElementById('fp-pin-msg').textContent = 'PINs do not match. Try again.';
-          document.getElementById('fp-pin-msg').className = 'login-msg error';
-          _fpBuf = ''; _fpNewPin = ''; _fpStep = 1;
-          document.getElementById('fp-pin-label').textContent = 'ENTER NEW PIN';
-          updFpDots();
-          return;
-        }
-        const salt = genSalt();
-        const hashed = await hashPIN(_fpBuf, salt);
-        Data.updateStaffMember({ id: target.id, pinHash: hashed, pinSalt: salt, failedAttempts: 0, lockedUntil: null });
-        Data.addAudit('PIN_RESET', `PIN reset via master code for ${target.name}`, 'MASTER');
-        Data.syncStaffPIN(Data.getStaffById(target.id));
-        overlay.remove();
-        UI.toast(`PIN reset for ${target.name}`, 'success');
-      }
-    }
-
-    overlay.querySelector('#fp-verify-btn').addEventListener('click', async () => {
-      const code = document.getElementById('fp-code').value.trim().toUpperCase();
-      const btn = overlay.querySelector('#fp-verify-btn');
-      btn.disabled = true;
-      const valid = await _verifyCodeRemote(code);
-      btn.disabled = false;
-      if (!valid) {
-        const msg = document.getElementById('fp-msg');
-        msg.textContent = 'Incorrect setup code.';
-        msg.className = 'login-msg error';
-        document.getElementById('fp-code').value = '';
-        return;
-      }
-      document.getElementById('fp-code-area').style.display = 'none';
-      document.getElementById('fp-pin-area').style.display = 'block';
-    });
-
-    overlay.querySelector('#fp-cancel-btn').addEventListener('click', () => overlay.remove());
-
-    overlay.querySelectorAll('.num-btn[data-fpk]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const k = btn.dataset.fpk;
-        if (k === 'CLR') { _fpBuf = ''; updFpDots(); return; }
-        if (k === 'DEL') { _fpBuf = _fpBuf.slice(0, -1); updFpDots(); return; }
-        if (_fpBuf.length >= 4) return;
-        _fpBuf += k;
-        updFpDots();
-        if (_fpBuf.length === 4) advanceFp();
-      });
+    _startEmailVerifiedPin(_selectedStaff, {
+      title: 'RESET YOUR PIN',
+      auditAction: 'PIN_RESET',
+      auditDetail: (name) => `${name} reset their own PIN via emailed code`,
+      onSuccess: (staff) => {
+        document.removeEventListener('keydown', _physicalKeyHandler);
+        _selectedStaff = staff;
+        createSession(staff);
+        startWatchdog();
+        UI.showApp();
+        UI.toast(`PIN reset. Welcome back, ${staff.name}!`, 'success');
+      },
     });
   }
 
@@ -745,7 +857,7 @@ const Auth = (() => {
     isFirstRun,
     _verifySetupCode,
     startAdminPINSetup, handleSetupKey, cancelSetupPIN, completeSetup,
-    showForgotPIN,
+    showForgotPIN, showFirstPinSetup,
     confirmAdminPIN, resetStaffPIN,
     hashPIN,
   };

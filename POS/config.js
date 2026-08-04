@@ -29,11 +29,12 @@ const CONFIG = {
   },
 
   SEED_STAFF: [
-    { id: 'GHST',   name: 'GHST',   role: 'admin', pinHash: null, pinSalt: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null },
-    { id: 'RAY',    name: 'RAY',    role: 'admin', pinHash: null, pinSalt: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null },
-    { id: 'STAFF1', name: 'STAFF1', role: 'staff', pinHash: null, pinSalt: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null },
-    { id: 'STAFF2', name: 'STAFF2', role: 'staff', pinHash: null, pinSalt: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null },
-    { id: 'STAFF3', name: 'STAFF3', role: 'staff', pinHash: null, pinSalt: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null },
+    { id: 'GHST',   name: 'GHST',   email: 'network@s-signals.com', role: 'admin', pinHash: null, pinSalt: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null },
+    { id: 'RAY',    name: 'Rae',    email: 'rae@s-signals.com',     role: 'admin', pinHash: null, pinSalt: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null },
+    { id: 'MORANT', name: 'Morant', email: 'morant@s-signals.com',  role: 'staff', pinHash: null, pinSalt: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null },
+    { id: 'STAFF1', name: 'STAFF1', email: '',                      role: 'staff', pinHash: null, pinSalt: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null },
+    { id: 'STAFF2', name: 'STAFF2', email: '',                      role: 'staff', pinHash: null, pinSalt: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null },
+    { id: 'STAFF3', name: 'STAFF3', email: '',                      role: 'staff', pinHash: null, pinSalt: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null },
   ],
 
   SEED_PRODUCTS: [
