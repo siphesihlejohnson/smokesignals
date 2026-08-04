@@ -9,7 +9,6 @@ const CONFIG = {
   LOCKOUT_MINUTES: 5,
   MAX_FAILED_ATTEMPTS: 3,
   VERSION: '1.0.0',
-  SETUP_CODE: 'SMOKE420NETWORK',
   DEFAULT_APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxrxxt-0ZkCf4058KXWvCJBYjDt5AnwHhG0fX0Y8_D8nnKcWRkyDdZqVVFkIbT7DAWc/exec',
 
   KEYS: {
@@ -30,11 +29,11 @@ const CONFIG = {
   },
 
   SEED_STAFF: [
-    { id: 'GHST',   name: 'GHST',   role: 'admin', pinHash: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null },
-    { id: 'RAY',    name: 'RAY',    role: 'admin', pinHash: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null },
-    { id: 'STAFF1', name: 'STAFF1', role: 'staff', pinHash: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null },
-    { id: 'STAFF2', name: 'STAFF2', role: 'staff', pinHash: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null },
-    { id: 'STAFF3', name: 'STAFF3', role: 'staff', pinHash: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null },
+    { id: 'GHST',   name: 'GHST',   role: 'admin', pinHash: null, pinSalt: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null },
+    { id: 'RAY',    name: 'RAY',    role: 'admin', pinHash: null, pinSalt: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null },
+    { id: 'STAFF1', name: 'STAFF1', role: 'staff', pinHash: null, pinSalt: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null },
+    { id: 'STAFF2', name: 'STAFF2', role: 'staff', pinHash: null, pinSalt: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null },
+    { id: 'STAFF3', name: 'STAFF3', role: 'staff', pinHash: null, pinSalt: null, active: true, failedAttempts: 0, lockedUntil: null, lastLogin: null },
   ],
 
   SEED_PRODUCTS: [

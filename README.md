@@ -8,7 +8,7 @@ This is the staff-facing POS, served from `/POS/`. The repo root (`index.html`, 
 
 ## What it does
 
-- **PIN login** — staff login with 4-digit PINs (SHA-256 hashed, never sent anywhere)
+- **PIN login** — staff login with 4-digit PINs (salted PBKDF2 hashed, never sent anywhere)
 - **Capture sales** — product, quantity, price, customer, cash or EFT
 - **Customer database** — auto-creates customers on first purchase, tracks visits and spend
 - **Inventory management** — product catalogue, stock levels, restock logging
@@ -53,7 +53,26 @@ The app will now sync all sales, inventory changes, and customer records to your
 
 ---
 
-## 2. Deploy to GitHub Pages
+## 2. Secure the Apps Script backend
+
+The Web App is deployed "Anyone can access" (required — the static POS has no server of its own), so `doGet`/`doPost` can't assume a caller is legitimate. Two Script Properties close the two most important gaps. **Do this now, not later** — until you set `SETUP_CODE`, first-run setup and "Forgot PIN" resets will always report the code as incorrect.
+
+In the Apps Script editor: **Project Settings → Script Properties → Add script property**.
+
+| Property | Required? | What it does |
+|---|---|---|
+| `SETUP_CODE` | **Yes** | Replaces the old hardcoded master code. Verified server-side now, instead of being shipped in public JS. Pick a new value — the previous `SMOKE420NETWORK` was committed in this repo's history, so treat it as burned. |
+| `API_KEY` | Recommended | If set, every write (`SALE`, `PRODUCT_UPDATE`, `CUSTOMER_UPSERT`, `CUSTOMER_DELETE`, `SALE_UPDATE`, `RESTOCK`, `STAFF_PIN_UPDATE`) must include a matching key, or it's rejected. Without it, anyone with the Web App URL can write to your sheet. |
+
+If you set `API_KEY`, enter the same value on **every device** in **Admin → Settings → Sync API Key** — reads still work without it, but syncing writes will silently fail until it's entered.
+
+**Known residual risk:** the `getStaff` endpoint still returns each staff member's `pinHash` (and `pinSalt`) to any caller — this is what lets a brand new device pull PINs down and let staff log in offline without an admin re-entering them. PINs are now salted PBKDF2 (expensive to brute-force even if a hash leaks) rather than raw SHA-256, but this is a deliberate trade-off between that convenience and airtight secrecy, not a fully closed gap. If you'd rather eliminate it entirely, that requires dropping automatic new-device PIN sync.
+
+After changing `APPSSCRIPT.js` or `APPSSCRIPT_waitlist.js`, you must re-paste the file into the Apps Script editor and create a **new deployment** (Deploy → Manage deployments → Edit → New version) — pushing to GitHub does not touch your Apps Script project.
+
+---
+
+## 3. Deploy to GitHub Pages
 
 ```bash
 # 1. Navigate to the project folder
@@ -84,7 +103,7 @@ git push -u origin main
 
 ---
 
-## 3. Configure Staff PINs (First Run)
+## 4. Configure Staff PINs (First Run)
 
 The first time you open the app, a **Setup Wizard** appears automatically because no PINs are configured.
 
@@ -100,7 +119,7 @@ The first time you open the app, a **Setup Wizard** appears automatically becaus
 
 ---
 
-## 4. Staff Roles
+## 5. Staff Roles
 
 | Role  | Access |
 |-------|--------|
@@ -109,7 +128,7 @@ The first time you open the app, a **Setup Wizard** appears automatically becaus
 
 ---
 
-## 5. File Structure
+## 6. File Structure
 
 ```
 smoke420/
@@ -136,7 +155,7 @@ smoke420/
 
 ---
 
-## 6. Keyboard Shortcuts
+## 7. Keyboard Shortcuts
 
 | Key | Tab |
 |-----|-----|
@@ -151,7 +170,7 @@ smoke420/
 
 ---
 
-## 7. Offline Mode
+## 8. Offline Mode
 
 The app works fully offline. All data is saved to `localStorage` immediately. When internet is available, it syncs to Google Sheets in the background. The bottom bar shows:
 

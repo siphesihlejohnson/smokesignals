@@ -31,6 +31,7 @@ const Data = (() => {
       lowStockThreshold: CONFIG.LOW_STOCK_THRESHOLD,
       sessionTimeout:    CONFIG.SESSION_TIMEOUT_MINUTES,
       appsScriptUrl:     CONFIG.DEFAULT_APPS_SCRIPT_URL,
+      apiKey:            '',
     }, lsGet(K.SETTINGS) || {});
   }
   function saveSettings(s) { lsSet(K.SETTINGS, s); }
@@ -269,13 +270,16 @@ const Data = (() => {
   }
 
   async function _postToSheets(item, url) {
+    const apiKey = getSettings().apiKey;
     const resp = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(item),
+      body: JSON.stringify(apiKey ? { ...item, apiKey } : item),
     });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    return await resp.json();
+    const result = await resp.json();
+    if (result && result.error === 'unauthorized') throw new Error('unauthorized');
+    return result;
   }
 
   function _mergeFromSheets(data) {
@@ -323,7 +327,7 @@ const Data = (() => {
   function syncStaffPIN(member) {
     queueSync({
       action: 'STAFF_PIN_UPDATE',
-      data: { id: member.id, name: member.name, role: member.role, pinHash: member.pinHash, active: member.active },
+      data: { id: member.id, name: member.name, role: member.role, pinHash: member.pinHash, pinSalt: member.pinSalt || '', active: member.active },
     });
     processQueue();
   }
@@ -346,11 +350,13 @@ const Data = (() => {
     sheetsStaff.forEach(ss => {
       const idx = local.findIndex(s => s.id === ss.id);
       if (idx >= 0) {
-        if (ss.pinHash)          local[idx].pinHash = ss.pinHash;
+        // pinHash and pinSalt are a matched pair — always update together so
+        // a device never ends up with one half of an old/new pair mismatched.
+        if (ss.pinHash) { local[idx].pinHash = ss.pinHash; local[idx].pinSalt = ss.pinSalt || null; }
         if (ss.role)             local[idx].role    = ss.role;
         if (ss.active !== undefined) local[idx].active = ss.active === true || ss.active === 'true';
       } else {
-        local.push({ id: ss.id, name: ss.name, role: ss.role, pinHash: ss.pinHash,
+        local.push({ id: ss.id, name: ss.name, role: ss.role, pinHash: ss.pinHash, pinSalt: ss.pinSalt || null,
           active: ss.active === true || ss.active === 'true',
           failedAttempts: 0, lockedUntil: null, lastLogin: null });
       }

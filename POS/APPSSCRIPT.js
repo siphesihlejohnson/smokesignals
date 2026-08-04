@@ -10,6 +10,39 @@ const SHEET_NAME_CUSTOMERS = 'Customers';
 const SHEET_NAME_SUMMARY   = 'Summary';
 const SHEET_NAME_STAFF     = 'Staff';
 
+// ── Security helpers ─────────────────────────────────────────────────────────
+//
+// This Web App is deployed "Anyone can access" (required so the static POS
+// client can reach it without an OAuth flow), so doPost/doGet cannot assume
+// the caller is legitimate. Two independent secrets, kept OUT of the public
+// GitHub repo, gate the sensitive operations:
+//
+//   API_KEY     — Script property. If set, every doPost write must include a
+//                 matching data.apiKey, or it's rejected. Set it once via
+//                 Project Settings → Script Properties, then enter the same
+//                 value in the POS's Admin → Settings tab.
+//   SETUP_CODE  — Script property. Replaces the old client-side master code
+//                 for first-run admin setup / "Forgot PIN" resets, verified
+//                 here via the VERIFY_CODE action instead of being shipped
+//                 in public client JS.
+//
+// If a property is left unset, the corresponding check is skipped (so an
+// existing deployment keeps working until the owner opts in) — but that
+// means these protections are INACTIVE until configured. See README.
+
+function sanitizeCell(value) {
+  // Sheets evaluates any cell value starting with = + - @ as a formula.
+  // Prefix with an apostrophe so it's always stored/rendered as plain text.
+  if (typeof value !== 'string') return value;
+  return /^[=+\-@\t\r]/.test(value) ? "'" + value : value;
+}
+
+function hasValidApiKey(data) {
+  const required = PropertiesService.getScriptProperties().getProperty('API_KEY');
+  if (!required) return true; // not configured yet — open, see note above
+  return data && data.apiKey === required;
+}
+
 // ── Entry Points ─────────────────────────────────────────────────────────────
 
 function doGet(e) {
@@ -20,6 +53,9 @@ function doGet(e) {
   }
 
   if (action === 'getStaff') {
+    // Still returns pinHash — required for the offline-first "new device
+    // auto-syncs PINs" flow. This is a deliberate, documented trade-off;
+    // see README's security notes.
     try {
       const ss = SpreadsheetApp.getActiveSpreadsheet();
       const staff = sheetToObjects(getOrCreateSheet(ss, SHEET_NAME_STAFF, getStaffHeaders()));
@@ -29,7 +65,9 @@ function doGet(e) {
     }
   }
 
-  // Default: return all data
+  // Default: return business data only — NOT staff/pinHash. The client's
+  // fetchFromSheets() never reads a .staff field from this response; staff
+  // sync goes exclusively through the dedicated getStaff action above.
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     const result = {
@@ -37,7 +75,6 @@ function doGet(e) {
       inventory: sheetToObjects(getOrCreateSheet(ss, SHEET_NAME_INVENTORY, getInventoryHeaders())),
       customers: sheetToObjects(getOrCreateSheet(ss, SHEET_NAME_CUSTOMERS, getCustomerHeaders())),
       summary:   sheetToObjects(getOrCreateSheet(ss, SHEET_NAME_SUMMARY,   getSummaryHeaders())),
-      staff:     sheetToObjects(getOrCreateSheet(ss, SHEET_NAME_STAFF,     getStaffHeaders())),
     };
     return respond(result);
   } catch (err) {
@@ -51,6 +88,16 @@ function doPost(e) {
     const action = body.action;
     const data   = body.data;
     const ss = SpreadsheetApp.getActiveSpreadsheet();
+
+    if (action === 'VERIFY_CODE') {
+      const required = PropertiesService.getScriptProperties().getProperty('SETUP_CODE');
+      const valid = !!required && body.code === required;
+      return respond({ valid });
+    }
+
+    if (!hasValidApiKey(body)) {
+      return respond({ error: 'unauthorized' }, 401);
+    }
 
     switch (action) {
       case 'SALE':
@@ -133,7 +180,7 @@ function getInventoryHeaders() {
   return ['id','name','category','unit','price','stock','sold','active','lastUpdated'];
 }
 function getStaffHeaders() {
-  return ['id','name','role','pinHash','active'];
+  return ['id','name','role','pinHash','pinSalt','active'];
 }
 function getCustomerHeaders() {
   return ['phone','name','notes','firstPurchase','lastPurchase','totalSpent','visits','favProduct','addedBy','lastUpdated'];
@@ -150,14 +197,14 @@ function updateSaleRow(ss, data) {
   if (rowNum < 0) return;
   const headers = getSalesHeaders();
   headers.forEach((h, i) => {
-    if (data[h] !== undefined) sheet.getRange(rowNum, i + 1).setValue(data[h]);
+    if (data[h] !== undefined) sheet.getRange(rowNum, i + 1).setValue(sanitizeCell(data[h]));
   });
 }
 
 function appendSale(ss, data) {
   const sheet = getOrCreateSheet(ss, SHEET_NAME_SALES, getSalesHeaders());
   const headers = getSalesHeaders();
-  const row = headers.map(h => data[h] !== undefined ? data[h] : '');
+  const row = headers.map(h => sanitizeCell(data[h] !== undefined ? data[h] : ''));
   sheet.appendRow(row);
 }
 
@@ -171,7 +218,7 @@ function upsertInventory(ss, data) {
   let rowNum = findRowByColumn(sheet, 0, data.id);
   if (rowNum < 0) rowNum = findRowByColumn(sheet, 1, data.name);
 
-  const row = headers.map(h => data[h] !== undefined ? data[h] : '');
+  const row = headers.map(h => sanitizeCell(data[h] !== undefined ? data[h] : ''));
   if (rowNum > 0) {
     sheet.getRange(rowNum, 1, 1, row.length).setValues([row]);
   } else {
@@ -202,7 +249,7 @@ function upsertStaff(ss, data) {
   const sheet = getOrCreateSheet(ss, SHEET_NAME_STAFF, getStaffHeaders());
   const headers = getStaffHeaders();
   const rowNum = findRowByColumn(sheet, 0, data.id);
-  const row = headers.map(h => data[h] !== undefined ? data[h] : '');
+  const row = headers.map(h => sanitizeCell(data[h] !== undefined ? data[h] : ''));
   if (rowNum > 0) {
     sheet.getRange(rowNum, 1, 1, row.length).setValues([row]);
   } else {
@@ -216,7 +263,7 @@ function upsertCustomer(ss, data) {
   const sheet = getOrCreateSheet(ss, SHEET_NAME_CUSTOMERS, getCustomerHeaders());
   const headers = getCustomerHeaders();
   const rowNum = findRowByColumn(sheet, 0, data.phone);
-  const row = headers.map(h => data[h] !== undefined ? data[h] : '');
+  const row = headers.map(h => sanitizeCell(data[h] !== undefined ? data[h] : ''));
 
   if (rowNum > 0) {
     sheet.getRange(rowNum, 1, 1, row.length).setValues([row]);

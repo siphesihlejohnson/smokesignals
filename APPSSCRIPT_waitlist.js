@@ -13,6 +13,17 @@
 // and Next Billing At columns by hand in the Members sheet.
 // ============================================================================
 
+// ── Security helpers ─────────────────────────────────────────────────────────
+// Sheets evaluates any cell value starting with = + - @ as a formula. Since
+// every field here comes from an unauthenticated public form, prefix those
+// with a leading apostrophe so Sheets always stores/renders them as plain
+// text — otherwise a submitted name/note could run a formula (e.g. HYPERLINK
+// or IMPORTXML) the moment an admin opens the sheet to review applications.
+function sanitizeCell(value) {
+  if (typeof value !== 'string') return value;
+  return /^[=+\-@\t\r]/.test(value) ? "'" + value : value;
+}
+
 // ── Web app entry points ───────────────────────────────────────────────────
 
 function doPost(e) {
@@ -82,13 +93,13 @@ function appendWaitlistEntry(data) {
 
   const row = [
     data.submittedAt ? new Date(data.submittedAt).toLocaleString('en-ZA') : new Date().toLocaleString('en-ZA'),
-    data.fname    || '',
-    data.lname    || '',
-    data.whatsapp || '',
-    data.area     || '',
+    sanitizeCell(data.fname    || ''),
+    sanitizeCell(data.lname    || ''),
+    sanitizeCell(data.whatsapp || ''),
+    sanitizeCell(data.area     || ''),
     data.age === 'yes' ? 'Yes' : '',
-    data.source   || '',
-    data.notes    || '',
+    sanitizeCell(data.source   || ''),
+    sanitizeCell(data.notes    || ''),
     'PENDING',  // Status column — manually update to APPROVED / REJECTED / WAITLIST
   ];
 
@@ -134,7 +145,8 @@ function addMember(data) {
   const memberId = 'M' + Utilities.formatDate(new Date(), 'GMT+2', 'yyMMdd') + '-' + Math.floor(Math.random() * 900 + 100);
 
   sheet.appendRow([
-    memberId, data.fname || '', data.lname || '', data.whatsapp || '', data.area || '',
+    memberId, sanitizeCell(data.fname || ''), sanitizeCell(data.lname || ''),
+    sanitizeCell(data.whatsapp || ''), sanitizeCell(data.area || ''),
     'PENDING_PAYMENT', new Date().toLocaleString('en-ZA'), '', ''
   ]);
 }

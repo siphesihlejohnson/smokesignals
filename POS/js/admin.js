@@ -400,6 +400,11 @@ const Admin = (() => {
           <label for="cfg-url">GOOGLE APPS SCRIPT URL</label>
           <input type="url" id="cfg-url" value="${UI.esc(settings.appsScriptUrl||'')}" placeholder="https://script.google.com/macros/s/...">
         </div>
+        <div class="form-group">
+          <label for="cfg-apikey">SYNC API KEY</label>
+          <input type="text" id="cfg-apikey" value="${UI.esc(settings.apiKey||'')}" placeholder="Must match the Apps Script's API_KEY property">
+          <div class="form-note">Only needed if the Apps Script has an API_KEY script property set — required on every device once it's enabled, or syncing will fail.</div>
+        </div>
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">SAVE SETTINGS</button>
           <button type="button" class="btn btn-sm" id="btn-test-conn">TEST CONNECTION</button>
@@ -424,6 +429,7 @@ const Admin = (() => {
       lowStockThreshold: parseInt(document.getElementById('cfg-threshold').value, 10) || 10,
       sessionTimeout:    parseInt(document.getElementById('cfg-timeout').value, 10) || 30,
       appsScriptUrl:     document.getElementById('cfg-url').value.trim(),
+      apiKey:            document.getElementById('cfg-apikey').value.trim(),
     };
     Data.saveSettings(settings);
     Data.addAudit('SETTINGS_SAVED', 'System settings updated', s?.staffId);

@@ -9,11 +9,48 @@ const Auth = (() => {
   let _warningOverlay = null;
   const SESSION_WARNING_MS = 2 * 60 * 1000;
 
-  // ─── SHA-256 ──────────────────────────────────────────────────────────────────
-  async function hashPIN(pin) {
+  // ─── PIN hashing ──────────────────────────────────────────────────────────────
+  // PBKDF2 with a random per-staff salt and a high iteration count — a 4-digit
+  // PIN is only a 10,000-value keyspace, so a single unsalted SHA-256 round
+  // (the old scheme) lets anyone who ever obtains a pinHash recover the PIN
+  // instantly. PBKDF2 makes each guess computationally expensive instead.
+  const PBKDF2_ITERATIONS = 100000;
+
+  function genSalt() {
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  async function hashPIN(pin, salt) {
+    const enc = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(pin), 'PBKDF2', false, ['deriveBits']);
+    const bits = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', salt: enc.encode(salt), iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+      keyMaterial, 256
+    );
+    return Array.from(new Uint8Array(bits)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  // Old unsalted single-round SHA-256 — kept only to verify PINs set before
+  // the PBKDF2 upgrade above, and to transparently upgrade them on next login.
+  async function hashPINLegacy(pin) {
     const buf = new TextEncoder().encode(pin);
     const hash = await crypto.subtle.digest('SHA-256', buf);
     return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  async function _verifyAndMaybeUpgradePin(staff, pin) {
+    if (staff.pinSalt) {
+      return (await hashPIN(pin, staff.pinSalt)) === staff.pinHash;
+    }
+    const legacyOk = (await hashPINLegacy(pin)) === staff.pinHash;
+    if (legacyOk) {
+      const salt = genSalt();
+      const upgraded = await hashPIN(pin, salt);
+      Data.updateStaffMember({ id: staff.id, pinHash: upgraded, pinSalt: salt });
+      Data.syncStaffPIN(Data.getStaffById(staff.id));
+    }
+    return legacyOk;
   }
 
   // ─── Session ──────────────────────────────────────────────────────────────────
@@ -245,12 +282,13 @@ const Auth = (() => {
     if (_selectedStaff.lockedUntil && Date.now() < _selectedStaff.lockedUntil) return;
     if (!_selectedStaff.pinHash) { setMsg('No PIN set. Contact admin.', 'error'); _pinBuffer = ''; updateDots(); return; }
 
-    const hashed = await hashPIN(_pinBuffer);
-    if (hashed === _selectedStaff.pinHash) {
+    const ok = await _verifyAndMaybeUpgradePin(_selectedStaff, _pinBuffer);
+
+    if (ok) {
       Data.addAudit('LOGIN_SUCCESS', `${_selectedStaff.name} logged in`, _selectedStaff.id);
       Data.updateStaffMember({ id: _selectedStaff.id, failedAttempts: 0, lockedUntil: null, lastLogin: new Date().toISOString() });
       document.removeEventListener('keydown', _physicalKeyHandler);
-      createSession(_selectedStaff);
+      createSession(Data.getStaffById(_selectedStaff.id));
       startWatchdog();
       UI.showApp();
     } else {
@@ -338,9 +376,29 @@ const Auth = (() => {
     _checkSetupComplete();
   }
 
-  function _verifySetupCode() {
+  async function _verifyCodeRemote(code) {
+    const settings = Data.getSettings();
+    if (!settings.appsScriptUrl) return false;
+    try {
+      const resp = await fetch(settings.appsScriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'VERIFY_CODE', code }),
+      });
+      const data = await resp.json();
+      return !!data.valid;
+    } catch {
+      return false;
+    }
+  }
+
+  async function _verifySetupCode() {
     const input = document.getElementById('setup-code-input').value.trim().toUpperCase();
-    if (input !== CONFIG.SETUP_CODE) {
+    const btn = document.querySelector('#setup-code-area button');
+    if (btn) btn.disabled = true;
+    const valid = await _verifyCodeRemote(input);
+    if (btn) btn.disabled = false;
+    if (!valid) {
       const msg = document.getElementById('setup-code-msg');
       msg.textContent = 'Incorrect setup code.';
       msg.className = 'login-msg error';
@@ -407,8 +465,9 @@ const Auth = (() => {
         updateSetupDots();
         return;
       }
-      const hashed = await hashPIN(_pinBuffer);
-      Data.updateStaffMember({ id: _selectedStaff.id, pinHash: hashed });
+      const salt = genSalt();
+      const hashed = await hashPIN(_pinBuffer, salt);
+      Data.updateStaffMember({ id: _selectedStaff.id, pinHash: hashed, pinSalt: salt });
       Data.addAudit('PIN_SET', `PIN set for ${_selectedStaff.name}`, _selectedStaff.id);
       Data.syncStaffPIN(Data.getStaffById(_selectedStaff.id));
 
@@ -502,8 +561,9 @@ const Auth = (() => {
           updFpDots();
           return;
         }
-        const hashed = await hashPIN(_fpBuf);
-        Data.updateStaffMember({ id: target.id, pinHash: hashed, failedAttempts: 0, lockedUntil: null });
+        const salt = genSalt();
+        const hashed = await hashPIN(_fpBuf, salt);
+        Data.updateStaffMember({ id: target.id, pinHash: hashed, pinSalt: salt, failedAttempts: 0, lockedUntil: null });
         Data.addAudit('PIN_RESET', `PIN reset via master code for ${target.name}`, 'MASTER');
         Data.syncStaffPIN(Data.getStaffById(target.id));
         overlay.remove();
@@ -511,9 +571,13 @@ const Auth = (() => {
       }
     }
 
-    overlay.querySelector('#fp-verify-btn').addEventListener('click', () => {
+    overlay.querySelector('#fp-verify-btn').addEventListener('click', async () => {
       const code = document.getElementById('fp-code').value.trim().toUpperCase();
-      if (code !== CONFIG.SETUP_CODE) {
+      const btn = overlay.querySelector('#fp-verify-btn');
+      btn.disabled = true;
+      const valid = await _verifyCodeRemote(code);
+      btn.disabled = false;
+      if (!valid) {
         const msg = document.getElementById('fp-msg');
         msg.textContent = 'Incorrect setup code.';
         msg.className = 'login-msg error';
@@ -585,9 +649,9 @@ const Auth = (() => {
           updDots();
           if (buf.length === 4) {
             const admin = Data.getStaffById(s.staffId);
-            const hashed = await hashPIN(buf);
+            const ok = await _verifyAndMaybeUpgradePin(admin, buf);
             overlay.remove();
-            resolve(hashed === admin.pinHash);
+            resolve(ok);
           }
         });
       });
@@ -657,9 +721,10 @@ const Auth = (() => {
                 document.getElementById('rp-label').textContent = 'ENTER NEW PIN';
                 updDots();
               } else {
-                const hashed = await hashPIN(buf);
+                const salt = genSalt();
+                const hashed = await hashPIN(buf, salt);
                 const s = getSession();
-                Data.updateStaffMember({ id: targetStaffId, pinHash: hashed, failedAttempts: 0, lockedUntil: null });
+                Data.updateStaffMember({ id: targetStaffId, pinHash: hashed, pinSalt: salt, failedAttempts: 0, lockedUntil: null });
                 Data.addAudit('PIN_RESET', `PIN reset for ${Data.getStaffById(targetStaffId)?.name}`, s?.staffId);
                 Data.syncStaffPIN(Data.getStaffById(targetStaffId));
                 overlay.remove();
