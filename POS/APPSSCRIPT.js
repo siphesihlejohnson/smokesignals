@@ -296,16 +296,20 @@ function upsertStaff(ss, data) {
 
 function requestLoginCode(ss, data) {
   const staffId = data && data.staffId;
-  if (!staffId) return;
+  console.log('requestLoginCode: staffId=' + staffId);
+  if (!staffId) { console.log('requestLoginCode: no staffId in request, bailing'); return; }
   const sheet = getOrCreateSheet(ss, SHEET_NAME_STAFF, getStaffHeaders());
   ensureHeaders(sheet, getStaffHeaders()); // self-heal a stale header row before reading
   const staff = sheetToObjects(sheet);
+  console.log('requestLoginCode: sheet headers=' + JSON.stringify(Object.keys(staff[0] || {})));
   const member = staff.filter(function (s) { return String(s.id) === String(staffId); })[0];
-  if (!member || !member.email) return; // silently no-op — caller always gets a generic "ok"
+  console.log('requestLoginCode: member=' + JSON.stringify(member));
+  if (!member || !member.email) { console.log('requestLoginCode: no member or no email — silent no-op'); return; }
 
   const code = String(Math.floor(100000 + Math.random() * 900000));
   CacheService.getScriptCache().put('LOGIN_CODE_' + staffId, code, 600); // 10 minutes
 
+  console.log('requestLoginCode: calling MailApp.sendEmail to ' + member.email);
   MailApp.sendEmail({
     to: member.email,
     subject: 'Your Smoke Signals POS code',
@@ -313,6 +317,7 @@ function requestLoginCode(ss, data) {
           'It expires in 10 minutes and can only be used once. ' +
           'If you did not request this, you can ignore this email.',
   });
+  console.log('requestLoginCode: MailApp.sendEmail returned without throwing — email accepted for delivery');
 }
 
 function verifyLoginCode(data) {
