@@ -31,14 +31,14 @@ const Reports = (() => {
         ${UI.panel('TOP PRODUCTS BY UNITS SOLD', `
           ${UI.table(
             ['PRODUCT','CATEGORY','UNITS SOLD','REVENUE'],
-            products.slice(0,10).map(p => [UI.esc(p.name), p.category, p.unitsSold, UI.fmtCurrency(p.revenue)])
+            products.slice(0,10).map(p => [UI.esc(p.name), UI.esc(p.category), p.unitsSold, UI.fmtCurrency(p.revenue)])
           )}
         `)}
 
         ${UI.panel('STAFF PERFORMANCE', `
           ${UI.table(
             ['STAFF','SALES','REVENUE','CASH','EFT','AVG SALE'],
-            staffStats.map(s => [s.name, s.count, UI.fmtCurrency(s.revenue),
+            staffStats.map(s => [UI.esc(s.name), s.count, UI.fmtCurrency(s.revenue),
               UI.fmtCurrency(s.cash), UI.fmtCurrency(s.eft),
               UI.fmtCurrency(s.count ? s.revenue / s.count : 0)])
           )}
@@ -165,11 +165,11 @@ const Reports = (() => {
 
     csv += '\n=== PRODUCTS ===\n';
     csv += 'Product,Category,Units Sold,Revenue\n';
-    products.forEach(p => { csv += `"${p.name}","${p.category}",${p.unitsSold},${p.revenue}\n`; });
+    products.forEach(p => { csv += `"${UI.csvSafe(p.name)}","${UI.csvSafe(p.category)}",${p.unitsSold},${p.revenue}\n`; });
 
     csv += '\n=== STAFF PERFORMANCE ===\n';
     csv += 'Staff,Sales,Revenue,Cash,EFT\n';
-    staffStats.forEach(st => { csv += `${st.name},${st.count},${st.revenue},${st.cash},${st.eft}\n`; });
+    staffStats.forEach(st => { csv += `${UI.csvSafe(st.name)},${st.count},${st.revenue},${st.cash},${st.eft}\n`; });
 
     const a = document.createElement('a');
     a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);

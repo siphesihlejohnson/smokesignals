@@ -320,11 +320,20 @@ const UI = (() => {
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  // Spreadsheet apps (Excel, Sheets) treat a cell starting with = + - @ as a
+  // formula. A free-text field (customer/product name, notes...) that happens
+  // to start with one of those would silently become a live formula for
+  // whoever opens an exported CSV — prefix with a quote so it's always text.
+  function csvSafe(value) {
+    const str = String(value ?? '');
+    return /^[=+\-@\t\r]/.test(str) ? "'" + str : str;
+  }
+
   return {
     init, showApp, showLogin, navigate, handleFnKey,
     renderTopBar, renderTabNav, renderFnBar, updateBottomBar,
     startClock, toast, modal, confirm, prompt,
-    fmtCurrency, statusBadge, panel, table, esc, withBusy,
+    fmtCurrency, statusBadge, panel, table, esc, csvSafe, withBusy,
     applyTheme, toggleTheme,
   };
 })();

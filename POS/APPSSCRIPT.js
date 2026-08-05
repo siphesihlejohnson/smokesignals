@@ -320,14 +320,33 @@ function requestLoginCode(ss, data) {
   console.log('requestLoginCode: MailApp.sendEmail returned without throwing — email accepted for delivery');
 }
 
+// A 6-digit code is only ~1M possibilities. This endpoint deliberately skips
+// the API_KEY check (it IS the auth mechanism), so without a guess limit
+// anyone who knows/guesses a staffId could brute-force it and take over that
+// account. Cap attempts per requested code, then force a fresh SEND CODE.
+const MAX_LOGIN_CODE_ATTEMPTS = 5;
+
 function verifyLoginCode(data) {
   const staffId = data && data.staffId;
   const code = data && data.code;
   if (!staffId || !code) return false;
   const cache = CacheService.getScriptCache();
+
+  const attemptsKey = 'LOGIN_CODE_ATTEMPTS_' + staffId;
+  const attempts = Number(cache.get(attemptsKey)) || 0;
+  if (attempts >= MAX_LOGIN_CODE_ATTEMPTS) {
+    cache.remove('LOGIN_CODE_' + staffId); // burn the code — no more guesses against it
+    return false;
+  }
+
   const cached = cache.get('LOGIN_CODE_' + staffId);
   const valid = !!cached && cached === String(code);
-  if (valid) cache.remove('LOGIN_CODE_' + staffId); // single use
+  if (valid) {
+    cache.remove('LOGIN_CODE_' + staffId); // single use
+    cache.remove(attemptsKey);
+  } else {
+    cache.put(attemptsKey, String(attempts + 1), 600); // same 10-minute window as the code
+  }
   return valid;
 }
 

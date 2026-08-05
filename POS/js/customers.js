@@ -48,14 +48,14 @@ const Customers = (() => {
       ['NAME','PHONE','SPENT','VISITS','FAV PRODUCT','LAST SEEN','NOTES','ACTIONS'],
       customers.map(c => [
         UI.esc(c.name),
-        c.phone,
+        UI.esc(c.phone),
         UI.fmtCurrency(c.totalSpent||0),
         c.visits||0,
         UI.esc(c.favProduct||'N/A'),
         c.lastPurchase ? Data.fmtDate(c.lastPurchase) : 'Never',
         UI.esc(c.notes||''),
-        `<button class="btn btn-xs" onclick="Customers.showEditForm('${c.phone.replace(/'/g,"\\'")}')">EDIT</button>
-         <button class="btn btn-xs btn-danger" onclick="Customers.deleteCustomer('${c.phone.replace(/'/g,"\\'")}')">DEL</button>`,
+        `<button class="btn btn-xs" onclick="Customers.showEditForm('${UI.esc(c.phone).replace(/'/g,"\\'")}')">EDIT</button>
+         <button class="btn btn-xs btn-danger" onclick="Customers.deleteCustomer('${UI.esc(c.phone).replace(/'/g,"\\'")}')">DEL</button>`,
       ]),
       'No customers found'
     );
@@ -199,7 +199,7 @@ const Customers = (() => {
     const customer = Data.getCustomerByPhone(phone);
     if (!customer) { UI.toast('Customer not found', 'error'); return; }
 
-    const ok = await UI.confirm(`Delete ${customer.name} (${phone})? This cannot be undone.`);
+    const ok = await UI.confirm(`Delete ${UI.esc(customer.name)} (${UI.esc(phone)})? This cannot be undone.`);
     if (!ok) return;
 
     const s = Auth.getSession();
@@ -223,10 +223,10 @@ const Customers = (() => {
     Data.addAudit('EXPORT_CSV', `Customer list exported (${_filtered.length} records)`, s?.staffId);
     const header = 'Phone,Name,Notes,First Purchase,Last Purchase,Total Spent,Visits,Fav Product,Added By\n';
     const rows = _filtered.map(c =>
-      [c.phone, `"${c.name||''}"`, `"${c.notes||''}"`,
+      [c.phone, `"${UI.csvSafe(c.name)}"`, `"${UI.csvSafe(c.notes)}"`,
        c.firstPurchase ? Data.fmtDate(c.firstPurchase) : '',
        c.lastPurchase  ? Data.fmtDate(c.lastPurchase)  : '',
-       c.totalSpent||0, c.visits||0, `"${c.favProduct||''}"`, c.addedBy||''].join(',')
+       c.totalSpent||0, c.visits||0, `"${UI.csvSafe(c.favProduct)}"`, UI.csvSafe(c.addedBy)].join(',')
     ).join('\n');
     const a = document.createElement('a');
     a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(header + rows);

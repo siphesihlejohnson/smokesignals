@@ -340,7 +340,7 @@ const SalesLog = (() => {
               <label for="log-staff">STAFF</label>
               <select id="log-staff">
                 <option value="">ALL</option>
-                ${staff.map(sf => `<option value="${sf.name}">${sf.name}</option>`).join('')}
+                ${staff.map(sf => `<option value="${UI.esc(sf.name)}">${UI.esc(sf.name)}</option>`).join('')}
               </select>
             </div>` : ''}
             <div class="form-group">
@@ -438,8 +438,8 @@ const SalesLog = (() => {
     Data.addAudit('EXPORT_CSV', `Sales log exported (${sales.length} records)`, s?.staffId);
     const header = 'Date,Time,Product,Category,Unit,Qty,Amount,Payment,Customer,Phone,Staff,SaleID\n';
     const rows = sales.map(s =>
-      [s.date,s.time,s.product,s.category,s.unit,s.qty,s.amount,s.payment,
-       `"${s.customer||''}"`,s.phone,s.staff,s.id].join(',')
+      [s.date,s.time,UI.csvSafe(s.product),UI.csvSafe(s.category),s.unit,s.qty,s.amount,s.payment,
+       `"${UI.csvSafe(s.customer)}"`,s.phone,UI.csvSafe(s.staff),s.id].join(',')
     ).join('\n');
     _download('sales_export.csv', header + rows);
   }

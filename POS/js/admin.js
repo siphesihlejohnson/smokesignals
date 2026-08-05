@@ -186,7 +186,7 @@ const Admin = (() => {
   async function toggleStaff(id) {
     const m = Data.getStaffById(id);
     if (!m) return;
-    const ok = await UI.confirm(`${m.active ? 'Deactivate' : 'Activate'} ${m.name}?`);
+    const ok = await UI.confirm(`${m.active ? 'Deactivate' : 'Activate'} ${UI.esc(m.name)}?`);
     if (!ok) return;
     const s = Auth.getSession();
     Data.updateStaffMember({ ...m, active: !m.active });
@@ -211,7 +211,7 @@ const Admin = (() => {
           <label for="audit-staff">STAFF</label>
           <select id="audit-staff">
             <option value="">ALL</option>
-            ${staff.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+            ${staff.map(s => `<option value="${UI.esc(s.id)}">${UI.esc(s.name)}</option>`).join('')}
           </select>
         </div>
         <div class="form-group">
@@ -379,21 +379,21 @@ const Admin = (() => {
       try {
         const sales = Data.getSales();
         exportData('sales',
-          sales.map(s=>[s.date,s.time,s.product,s.category,s.unit,s.qty,s.amount,s.payment,`"${s.customer||''}"`,s.phone,s.staff,s.id].join(',')).join('\n'),
+          sales.map(s=>[s.date,s.time,UI.csvSafe(s.product),UI.csvSafe(s.category),s.unit,s.qty,s.amount,s.payment,`"${UI.csvSafe(s.customer)}"`,s.phone,UI.csvSafe(s.staff),s.id].join(',')).join('\n'),
           'Date,Time,Product,Category,Unit,Qty,Amount,Payment,Customer,Phone,Staff,SaleID'
         );
         await wait(400);
 
         const prods = Data.getProducts();
         exportData('inventory',
-          prods.map(p=>[`"${p.name}"`,p.category,p.unit,p.price,p.stock,p.sold,p.active].join(',')).join('\n'),
+          prods.map(p=>[`"${UI.csvSafe(p.name)}"`,UI.csvSafe(p.category),p.unit,p.price,p.stock,p.sold,p.active].join(',')).join('\n'),
           'Product,Category,Unit,Price,Stock,Sold,Active'
         );
         await wait(400);
 
         const custs = Data.getCustomers();
         exportData('customers',
-          custs.map(c=>[c.phone,`"${c.name||''}"`,c.totalSpent,c.visits,`"${c.favProduct||''}"`,c.lastPurchase?Data.fmtDate(c.lastPurchase):''].join(',')).join('\n'),
+          custs.map(c=>[c.phone,`"${UI.csvSafe(c.name)}"`,c.totalSpent,c.visits,`"${UI.csvSafe(c.favProduct)}"`,c.lastPurchase?Data.fmtDate(c.lastPurchase):''].join(',')).join('\n'),
           'Phone,Name,TotalSpent,Visits,FavProduct,LastPurchase'
         );
         UI.toast('Export complete — 3 CSV files downloaded', 'success');

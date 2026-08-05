@@ -29,7 +29,7 @@ const Inventory = (() => {
       ['NAME','CATEGORY','UNIT','PRICE','STOCK','SOLD','STATUS','ACTIONS'],
       products.map(p => [
         UI.esc(p.name),
-        p.category,
+        UI.esc(p.category),
         p.unit,
         UI.fmtCurrency(p.price),
         p.stock,
